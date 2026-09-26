@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.15, 2026-09-26
+
+The footer and the scroll hints use words instead of arrow glyphs.
+
 ## 0.1.14, 2026-09-26
 
 The footer pairs each key with its meaning.

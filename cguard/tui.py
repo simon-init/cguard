@@ -10,10 +10,10 @@ import textwrap
 from . import __version__, config
 
 TEXT_WIDTH = 76
-HELP_LIST = [("↑↓", "move"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
-             ("→", "details"), ("s", "save"), ("q", "quit")]
-HELP_DETAIL = [("↑↓", "scroll"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
-               ("←", "back"), ("s", "save"), ("q", "quit")]
+HELP_LIST = [("up/down", "move"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
+             ("right", "details"), ("s", "save"), ("q", "quit")]
+HELP_DETAIL = [("up/down", "scroll"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
+               ("left", "back"), ("s", "save"), ("q", "quit")]
 
 C_ACCENT, C_DENY, C_ASK, C_OFF, C_DIM, C_SEL = 1, 2, 3, 4, 5, 6
 
@@ -199,9 +199,9 @@ class Screen:
             else:
                 self.put(top + i, 3, line)
         if self.scroll + visible < len(body):
-            self.put(h - 3, 3, "↓ more", self.pair(C_DIM))
+            self.put(h - 3, 3, "more below", self.pair(C_DIM))
         elif self.scroll > 0:
-            self.put(h - 3, 3, "↑ back to the top", self.pair(C_DIM))
+            self.put(h - 3, 3, "end of text, scroll up for the start", self.pair(C_DIM))
         # the list view keeps a free row above the status line as well
 
 

@@ -2,7 +2,8 @@
 
 Up and down move. Enter or space cycles a rule's mode, or selects a profile; d, a and o
 set a rule's mode directly. Right arrow opens the full description, left arrow returns.
-s saves, q quits. Standard library only.
+s saves, q quits. Standard library only. The layout adapts to the terminal width: the
+footer wraps, descriptions are cut with an ellipsis, and the header drops its tagline.
 """
 import curses
 import textwrap
@@ -36,6 +37,29 @@ def _cycle(mode):
     return modes[(modes.index(mode) + 1) % len(modes)]
 
 
+def _fit(text, width):
+    """text cut to width with an ellipsis, or empty when there is no room for a word."""
+    if width < 4:
+        return ""
+    return text if len(text) <= width else text[:width - 1].rstrip() + "…"
+
+
+def _footer_rows(keys, width):
+    """Pack the key cells into as few rows as fit the width, two at most."""
+    cells = [(f" {k} ", f"{m}  ") for k, m in keys]
+    rows, row, used = [], [], 0
+    for cell in cells:
+        need = len(cell[0]) + len(cell[1])
+        if row and used + need > width - 1:
+            rows.append(row)
+            row, used = [], 0
+        row.append(cell)
+        used += need
+    if row:
+        rows.append(row)
+    return rows[:2]
+
+
 class Screen:
     def __init__(self, stdscr):
         self.scr = stdscr
@@ -67,7 +91,7 @@ class Screen:
     # ------------------------------------------------------------------ drawing
     def put(self, y, x, text, attr=0):
         h, w = self.scr.getmaxyx()
-        if 0 <= y < h and x < w:
+        if 0 <= y < h and 0 <= x < w - 1 and text:
             try:
                 self.scr.addnstr(y, x, text, max(0, w - x - 1), attr)
             except curses.error:
@@ -77,68 +101,73 @@ class Screen:
         self.put(0, 0, " " * (w - 1), self.pair(C_SEL))
         self.put(0, 1, "cguard", self.pair(C_SEL, curses.A_BOLD))
         self.put(0, 8, f"v{__version__}", self.pair(C_SEL))
+        right = f"profile: {self.cfg['profile']}" + ("  * unsaved" if self.dirty else "")
         tag = "guards for a Claude Code session"
-        self.put(0, 16, tag, self.pair(C_SEL))
-        right = f"profile: {self.cfg['profile']}" + ("   * unsaved" if self.dirty else "")
-        self.put(0, max(17 + len(tag), w - len(right) - 2), right, self.pair(C_SEL, curses.A_BOLD))
+        if 16 + len(tag) + 2 + len(right) + 2 <= w:
+            self.put(0, 16, tag, self.pair(C_SEL))
+        self.put(0, max(16, w - len(right) - 2), right, self.pair(C_SEL, curses.A_BOLD))
 
     def footer(self, h, w, keys):
-        self.put(h - 1, 0, " " * (w - 1), curses.A_REVERSE)
-        x = 1
-        for key, what in keys:
-            self.put(h - 1, x, f" {key} ", curses.A_REVERSE | curses.A_BOLD)
-            x += len(key) + 3
-            self.put(h - 1, x, what, curses.A_REVERSE)
-            x += len(what) + 2
-        self.put(h - 2, 1, self.message, self.pair(C_ACCENT))
+        rows = _footer_rows(keys, w)
+        for i, row in enumerate(rows):
+            y = h - len(rows) + i
+            self.put(y, 0, " " * (w - 1), curses.A_REVERSE)
+            x = 1
+            for key, meaning in row:
+                self.put(y, x, key, curses.A_REVERSE | curses.A_BOLD)
+                x += len(key)
+                self.put(y, x, meaning, curses.A_REVERSE)
+                x += len(meaning)
+        self.put(h - len(rows) - 1, 1, _fit(self.message, w - 2), self.pair(C_ACCENT))
 
     def draw(self):
         self.scr.erase()
         h, w = self.scr.getmaxyx()
         self.header(w)
+        keys = HELP_LIST if self.view == "list" else HELP_DETAIL
+        bottom = len(_footer_rows(keys, w)) + 1   # footer rows plus the status line
         if self.view == "list":
-            self.draw_list(h, w)
-            self.footer(h, w, HELP_LIST)
+            self.draw_list(h, w, bottom)
         else:
-            self.draw_detail(h, w)
-            self.footer(h, w, HELP_DETAIL)
+            self.draw_detail(h, w, bottom)
+        self.footer(h, w, keys)
         self.scr.refresh()
 
-    def draw_list(self, h, w):
-        top, visible = 2, h - 6
+    def draw_list(self, h, w, bottom):
+        top = 2
+        visible = max(1, h - top - bottom - 1)
         first = max(0, min(self.cursor - visible // 2, len(self.items) - visible))
         for row, idx in enumerate(range(first, min(len(self.items), first + visible))):
             kind, value = self.items[idx]
             y = top + row
             selected = idx == self.cursor
-            bold = curses.A_BOLD if selected else 0
             if kind == "blank":
                 continue
             if kind == "group":
                 self.put(y, 2, value.upper(), self.pair(C_ACCENT, curses.A_BOLD))
                 self.put(y, 3 + len(value), " " + "─" * max(0, w - len(value) - 6), self.pair(C_DIM))
-            elif kind == "about":
-                self.put(y, 1, ("▶ " if selected else "  ") + "About cguard", bold)
-                self.put(y, 16, "  how it works, what it cannot see, where the log is", self.pair(C_DIM))
+                continue
+            self.put(y, 1, "▶ " if selected else "  ", curses.A_BOLD)
+            if kind == "about":
+                name, desc, x = "About cguard", "how it works, what it cannot see, where the log is", 3
             elif kind == "profile":
                 active = value == self.cfg["profile"]
-                title = config.PROFILE_INFO[value][0]
-                self.put(y, 1, "▶ " if selected else "  ", curses.A_BOLD)
                 self.put(y, 3, "● " if active else "○ ", self.pair(C_OFF if active else C_DIM, curses.A_BOLD))
-                self.put(y, 5, f"{value:<12}", bold | (self.pair(C_ACCENT) if active else 0))
-                self.put(y, 18, title, self.pair(C_DIM))
+                name, desc, x = value, config.PROFILE_INFO[value][0], 5
             else:
                 r = config.rule(value)
                 mode = self.cfg["rules"][value]
-                self.put(y, 1, "▶ " if selected else "  ", curses.A_BOLD)
                 self.put(y, 3, f"[{mode:<4}]", self.mode_attr(mode))
-                self.put(y, 10, r["title"], bold)
-                self.put(y, 11 + len(r["title"]), "  " + r["short"], self.pair(C_DIM))
+                name, desc, x = r["title"], r["short"], 10
+            attr = curses.A_BOLD | (self.pair(C_SEL) if selected else 0)
+            self.put(y, x, _fit(name, w - x - 1), attr)
+            x += len(name) + 2
+            self.put(y, x, _fit(desc, w - x - 1), self.pair(C_DIM))
 
     def body_lines(self, w):
-        """[(attr_name, text)] ready to draw, wrapped."""
+        """[(style, text)] ready to draw, wrapped."""
         kind, value = self.items[self.cursor]
-        width = min(TEXT_WIDTH, max(30, w - 6))
+        width = min(TEXT_WIDTH, max(24, w - 6))
         if kind == "about":
             text = config.ABOUT
         elif kind == "profile":
@@ -161,35 +190,37 @@ class Screen:
                     lines.append(("plain", ""))
                 lines.append(("header", item))
             elif style == "bullet":
-                wrapped = textwrap.wrap(item, width=width - 4) or [""]
+                wrapped = textwrap.wrap(item, width=max(10, width - 4)) or [""]
                 lines.append(("bullet", "• " + wrapped[0]))
                 lines.extend(("bullet", "  " + w2) for w2 in wrapped[1:])
             else:
                 lines.extend(("plain", w2) for w2 in (textwrap.wrap(item, width=width) or [""]))
         return lines
 
-    def draw_detail(self, h, w):
+    def draw_detail(self, h, w, bottom):
         kind, value = self.items[self.cursor]
+        rule_w = min(TEXT_WIDTH, max(10, w - 6))
         if kind == "about":
             self.put(2, 3, "About cguard", self.pair(C_ACCENT, curses.A_BOLD))
-            self.put(3, 3, "─" * min(TEXT_WIDTH, w - 6), self.pair(C_DIM))
+            self.put(3, 3, "─" * rule_w, self.pair(C_DIM))
             top = 4
         elif kind == "profile":
-            self.put(2, 3, f"Profile: {value}", self.pair(C_ACCENT, curses.A_BOLD))
-            self.put(3, 3, config.PROFILE_INFO[value][0], self.pair(C_DIM))
-            self.put(4, 3, "─" * min(TEXT_WIDTH, w - 6), self.pair(C_DIM))
+            self.put(2, 3, _fit(f"Profile: {value}", w - 4), self.pair(C_ACCENT, curses.A_BOLD))
+            self.put(3, 3, _fit(config.PROFILE_INFO[value][0], w - 4), self.pair(C_DIM))
+            self.put(4, 3, "─" * rule_w, self.pair(C_DIM))
             top = 5
         else:
             r = config.rule(value)
             mode = self.cfg["rules"][value]
-            self.put(2, 3, r["title"], self.pair(C_ACCENT, curses.A_BOLD))
+            self.put(2, 3, _fit(r["title"], w - 4), self.pair(C_ACCENT, curses.A_BOLD))
             meta = f"{r['id']}   {r['group']}   mode "
-            self.put(3, 3, meta, self.pair(C_DIM))
-            self.put(3, 3 + len(meta), mode, self.mode_attr(mode))
-            self.put(4, 3, "─" * min(TEXT_WIDTH, w - 6), self.pair(C_DIM))
+            self.put(3, 3, _fit(meta, w - 4), self.pair(C_DIM))
+            if 3 + len(meta) + 4 < w:
+                self.put(3, 3 + len(meta), mode, self.mode_attr(mode))
+            self.put(4, 3, "─" * rule_w, self.pair(C_DIM))
             top = 5
-        body = self.body_lines(w) + [("plain", "")] * 3   # room below the last line
-        visible = h - top - 4
+        body = self.body_lines(w) + [("plain", "")] * 3
+        visible = max(1, h - top - bottom - 1)
         self.scroll = max(0, min(self.scroll, max(0, len(body) - visible)))
         for i, (style, line) in enumerate(body[self.scroll:self.scroll + visible]):
             if style == "header":
@@ -198,12 +229,11 @@ class Screen:
                 self.put(top + i, 5, line)
             else:
                 self.put(top + i, 3, line)
+        hint_y = h - bottom - 1
         if self.scroll + visible < len(body):
-            self.put(h - 3, 3, "more below", self.pair(C_DIM))
+            self.put(hint_y, max(3, w - 12), "more below", self.pair(C_DIM))
         elif self.scroll > 0:
-            self.put(h - 3, 3, "end of text, scroll up for the start", self.pair(C_DIM))
-        # the list view keeps a free row above the status line as well
-
+            self.put(hint_y, max(3, w - 26), "end, scroll up for start", self.pair(C_DIM))
 
     # ------------------------------------------------------------------ actions
     def move(self, delta):
@@ -253,7 +283,8 @@ class Screen:
         if not self.dirty:
             return True
         h, w = self.scr.getmaxyx()
-        self.put(h - 2, 1, "unsaved changes:  s save and quit   d discard and quit   any other key stays", self.pair(C_ASK, curses.A_BOLD))
+        rows = len(_footer_rows(HELP_LIST if self.view == "list" else HELP_DETAIL, w))
+        self.put(h - rows - 1, 1, _fit("unsaved changes:  s save and quit   d discard and quit   any other key stays", w - 2), self.pair(C_ASK, curses.A_BOLD))
         self.scr.refresh()
         key = self.scr.getch()
         if key in (ord("s"), ord("S")):

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.19, 2026-09-26
+
+Known secret paths: the plugin carries the 140 deny rules for Claude Code's own permissions and installs the missing ones on request, from the screen or with `cguard denylist install`. The quit prompt says to press any other key to stay.
+
 ## 0.1.18, 2026-09-26
 
 The screen adapts to the terminal width: every row leads with its name in bold, descriptions are cut with an ellipsis, the footer wraps onto two rows, and the header drops its tagline when narrow.

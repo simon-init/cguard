@@ -5,7 +5,8 @@ out of an assistant session. Every refusal comes with a way forward.
 
 It is one hook, written in Python with no dependencies, that runs before every Read,
 Edit, Write, Grep and Bash call. It reads the first 64 KB of a file the tool is about
-to touch, the whole file in almost every case, and the file content never reaches the model. Only the decision does.
+to touch, which is the whole file in almost every case. The file content never reaches
+the model. Only the decision does.
 
 ## What it guards
 
@@ -30,8 +31,23 @@ to touch, the whole file in almost every case, and the file content never reache
 | `session.check` | off | If `.env` is not ignored, or a tracked file holds a secret, warn once per session |
 
 An `ask` opens Claude Code's own permission dialog, Yes, No and "tell Claude what to do
-differently", with the reason shown in it. It appears even when you run with permission
-prompts switched off, because a hook's answer is honoured regardless of that setting.
+differently", with the reason shown in it. A hook's answer is honoured regardless of the
+permission mode, so the dialog appears even when you run with permission prompts
+switched off.
+
+## Known secret paths
+
+The hook finds secrets by content. Claude Code's own configuration can also refuse files
+by name, before any hook runs: SSH keys, environment files, cloud and password-manager
+credentials, shell history, browser profiles. cguard carries 140 such rules and installs
+them into `~/.claude/settings.json` on request, adding only what is missing:
+
+```
+cguard denylist status
+cguard denylist install
+```
+
+The same row exists in the configuration screen, under Files by name.
 
 Two profiles. `standard` guards secrets, commits and the machine, and lets Claude move
 between folders and install without asking. `contained` adds containment: Claude stays

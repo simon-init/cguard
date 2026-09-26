@@ -55,7 +55,7 @@ By content, not by file name. The hook reads the first 64 KB of a file, which is
 - A secret that reads as ordinary words.
 - Anything a program does after Claude starts it.
 
-The deny list in Claude Code's own configuration, which blocks known file names, is the layer below this one. A real sandbox is the layer below that.
+The deny list in Claude Code's own settings, which blocks known file names, is the layer below this one. cguard carries those rules too: see Known secret paths in this screen, or run cguard denylist install. A real sandbox is the layer below that.
 
 ## Where things are
 - Configuration: {CONFIG_PATH}. Edited by this screen and by the cguard command. Delete it to return to the standard profile with nothing changed.
@@ -67,6 +67,27 @@ The deny list in Claude Code's own configuration, which blocks known file names,
 - cguard why, the most recent refusal with its full explanation. cguard why 3 for the third most recent, cguard why list to pick from the last twenty.
 - cguard show, the current profile, rule modes and allowlists.
 - Inside a session: /cguard:audit, /cguard:why, /cguard:config."""
+
+DENYLIST_TEXT = """## What it is
+A list of file names and folders that Claude Code refuses to read, edit or touch from a shell, before any hook runs. It lives in Claude Code's own settings file under permissions. A plugin cannot write there by itself, so cguard carries the rules and installs them when you ask.
+
+## What is on the list
+- SSH keys and the SSH folder, on any path.
+- Environment files: .env, .env.local, .env.production and the like.
+- Private keys and certificates by extension, password databases, Terraform state.
+- Cloud and tool credentials: AWS, Azure, Google Cloud, Hetzner, Kubernetes, GPG, Docker, netrc, git credentials, password stores, rclone, sops.
+- Claude Code's own credentials file.
+- Shell, Python and database history files.
+- Browser profiles.
+- The env and printenv commands.
+
+## How it differs from the secrets rule
+The secrets rule looks inside a file and needs to recognise what it finds. This list needs nothing: a matching name is refused outright, whatever is in the file. The two layers cover each other's gaps.
+
+## Commands
+- cguard denylist status
+- cguard denylist show
+- cguard denylist install"""
 
 PROFILE_INFO = {
     "standard": ("Guards on, free to move between folders",

@@ -9,7 +9,7 @@ import textwrap
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cguard import __version__, audit, config, guards, patterns  # noqa: E402
+from cguard import __version__, audit, config, denylist, guards, patterns  # noqa: E402
 
 USAGE = """cguard: guards for a Claude Code session
 
@@ -26,6 +26,9 @@ USAGE = """cguard: guards for a Claude Code session
   cguard why list                   the last twenty refusals, numbered
   cguard check '<shell command>'    what the guard would do with a command, without running it
   cguard check-file <path>          whether a file counts as secret material
+  cguard denylist status            are the known secret paths in Claude Code's settings
+  cguard denylist show              list the rules
+  cguard denylist install           add the missing rules to the settings file, keep the rest
   cguard config                     the interactive settings screen (needs a real terminal)
   cguard version
 """
@@ -166,6 +169,18 @@ def main(argv=None):
             label = patterns.classify_file(os.path.abspath(os.path.expanduser(args[0])))
             print(f"{args[0]}: {label or 'no secret material found in the first 64 KB'}")
             return 1 if label else 0
+        elif cmd == "denylist" and args and args[0] in ("status", "show", "install"):
+            present, missing = denylist.status()
+            if args[0] == "status":
+                print(f"{len(present)} of {len(denylist.RULES)} rules present in {denylist.SETTINGS_PATH}, {len(missing)} missing")
+                return 0 if not missing else 1
+            if args[0] == "show":
+                for r in denylist.RULES:
+                    print(("  " if r in present else "+ ") + r)
+                print("\n'+' marks a rule that is not installed yet")
+            else:
+                added = denylist.install()
+                print(f"added {added} rules to {denylist.SETTINGS_PATH}; {len(denylist.RULES)} present now. Restart Claude Code to load them.")
         elif cmd == "config":
             from cguard import tui
             tui.run()

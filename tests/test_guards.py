@@ -17,8 +17,9 @@ TMP = tempfile.mkdtemp(prefix="cguard-test-")
 os.environ["CGUARD_CONFIG"] = os.path.join(TMP, "config.json")
 os.environ["CGUARD_AUDIT"] = os.path.join(TMP, "audit.log")
 os.environ["CLAUDE_PLUGIN_ROOT"] = str(ROOT)
+os.environ["CGUARD_SETTINGS"] = os.path.join(TMP, "settings.json")
 
-from cguard import config, guards, hook, patterns  # noqa: E402
+from cguard import config, denylist, guards, hook, patterns  # noqa: E402
 
 # Test material. The prefixes are split so this file never trips its own guard.
 FAKE_ANTHROPIC = "sk-ant-" + "api03-" + "A" * 40
@@ -293,6 +294,31 @@ class HookProcess(unittest.TestCase):
         r = subprocess.run([sys.executable, str(ROOT / "cguard" / "hook.py")], input="not json", capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout.strip(), "")
+
+
+class DenyList(unittest.TestCase):
+    def test_install_adds_only_missing_and_keeps_the_rest(self):
+        path = Path(os.environ["CGUARD_SETTINGS"])
+        path.write_text(json.dumps({"theme": "dark", "permissions": {"deny": [denylist.RULES[0], "Bash(my-own-rule)"]}}))
+        present, missing = denylist.status()
+        self.assertEqual(len(present), 1)
+        self.assertEqual(len(missing), len(denylist.RULES) - 1)
+        self.assertEqual(denylist.state(), "partial")
+        added = denylist.install()
+        self.assertEqual(added, len(denylist.RULES) - 1)
+        saved = json.loads(path.read_text())
+        self.assertEqual(saved["theme"], "dark")
+        self.assertIn("Bash(my-own-rule)", saved["permissions"]["deny"])
+        self.assertEqual(denylist.state(), "on")
+        self.assertEqual(denylist.install(), 0)
+
+    def test_missing_settings_file_counts_as_off(self):
+        path = Path(os.environ["CGUARD_SETTINGS"])
+        if path.exists():
+            path.unlink()
+        self.assertEqual(denylist.state(), "off")
+        self.assertEqual(denylist.install(), len(denylist.RULES))
+        self.assertEqual(denylist.state(), "on")
 
 
 class Configuration(unittest.TestCase):

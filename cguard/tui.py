@@ -8,7 +8,7 @@ footer wraps, descriptions are cut with an ellipsis, and the header drops its ta
 import curses
 import textwrap
 
-from . import __version__, config
+from . import __version__, config, denylist
 
 TEXT_WIDTH = 76
 HELP_LIST = [("↑↓ up/down", "move"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
@@ -23,6 +23,7 @@ def _items():
     out = [("about", "About cguard"), ("group", "Profile")]
     for name in config.PROFILES:
         out.append(("profile", name))
+    out += [("blank", ""), ("group", "Files by name"), ("denylist", "Known secret paths")]
     for group in config.GROUPS:
         out.append(("blank", ""))
         out.append(("group", group))
@@ -154,6 +155,10 @@ class Screen:
                 active = value == self.cfg["profile"]
                 self.put(y, 3, "● " if active else "○ ", self.pair(C_OFF if active else C_DIM, curses.A_BOLD))
                 name, desc, x = value, config.PROFILE_INFO[value][0], 5
+            elif kind == "denylist":
+                state = denylist.state()
+                self.put(y, 3, f"[{state[:4]:<4}]", self.pair({"on": C_OFF, "partial": C_ASK, "off": C_DENY}[state], curses.A_BOLD))
+                name, desc, x = "Known secret paths", f"{len(denylist.RULES)} deny rules in Claude Code's own settings: SSH keys, env files, credentials, history, browsers", 10
             else:
                 r = config.rule(value)
                 mode = self.cfg["rules"][value]
@@ -170,6 +175,11 @@ class Screen:
         width = min(TEXT_WIDTH, max(24, w - 6))
         if kind == "about":
             text = config.ABOUT
+        elif kind == "denylist":
+            present, missing = denylist.status()
+            text = config.DENYLIST_TEXT + f"\n\n## On this machine\n{len(present)} of {len(denylist.RULES)} rules are in {denylist.SETTINGS_PATH}."
+            text += ("\n\nAll present. Nothing to do." if not missing else
+                     f"\n\n{len(missing)} missing. Press Enter to add them. Nothing else in the file is changed, and Claude Code loads them at its next start.")
         elif kind == "profile":
             title, desc = config.PROFILE_INFO[value]
             other = next(n for n in config.PROFILES if n != value)
@@ -200,8 +210,8 @@ class Screen:
     def draw_detail(self, h, w, bottom):
         kind, value = self.items[self.cursor]
         rule_w = min(TEXT_WIDTH, max(10, w - 6))
-        if kind == "about":
-            self.put(2, 3, "About cguard", self.pair(C_ACCENT, curses.A_BOLD))
+        if kind in ("about", "denylist"):
+            self.put(2, 3, "About cguard" if kind == "about" else "Known secret paths", self.pair(C_ACCENT, curses.A_BOLD))
             self.put(3, 3, "─" * rule_w, self.pair(C_DIM))
             top = 4
         elif kind == "profile":
@@ -253,6 +263,8 @@ class Screen:
             self.set_mode()
         elif kind == "profile":
             self.set_profile(value)
+        elif kind == "denylist":
+            self.install_denylist()
         elif kind == "about" and self.view == "list":
             self.view, self.scroll = "detail", 0
 
@@ -274,6 +286,21 @@ class Screen:
         self.dirty = True
         self.message = f"profile {name}: every rule reset to its defaults, allowlists kept   (s to save)"
 
+    def install_denylist(self):
+        present, missing = denylist.status()
+        if not missing:
+            self.message = f"all {len(denylist.RULES)} rules are already in {denylist.SETTINGS_PATH}"
+            return
+        h, w = self.scr.getmaxyx()
+        rows = len(_footer_rows(HELP_LIST if self.view == "list" else HELP_DETAIL, w))
+        self.put(h - rows - 1, 1, _fit(f"add {len(missing)} rules to {denylist.SETTINGS_PATH}?  y yes, press any other key to stay", w - 2), self.pair(C_ASK, curses.A_BOLD))
+        self.scr.refresh()
+        if self.scr.getch() in (ord("y"), ord("Y")):
+            added = denylist.install()
+            self.message = f"added {added} rules. Restart Claude Code to load them."
+        else:
+            self.message = "nothing changed"
+
     def save(self):
         path = config.save(self.cfg)
         self.dirty = False
@@ -284,7 +311,7 @@ class Screen:
             return True
         h, w = self.scr.getmaxyx()
         rows = len(_footer_rows(HELP_LIST if self.view == "list" else HELP_DETAIL, w))
-        self.put(h - rows - 1, 1, _fit("unsaved changes:  s save and quit   d discard and quit   any other key stays", w - 2), self.pair(C_ASK, curses.A_BOLD))
+        self.put(h - rows - 1, 1, _fit("unsaved changes:  s save and quit   d discard and quit   press any other key to stay", w - 2), self.pair(C_ASK, curses.A_BOLD))
         self.scr.refresh()
         key = self.scr.getch()
         if key in (ord("s"), ord("S")):

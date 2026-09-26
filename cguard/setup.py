@@ -259,6 +259,7 @@ class Wizard:
         y = 2
         if self.step == 0:
             if w >= 52 and h >= 22:
+                y = 1
                 for line in LOGO:
                     self.put(y, 3, line, self.pair(C_ACCENT, curses.A_BOLD))
                     y += 1

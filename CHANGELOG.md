@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.39, 2026-09-27
+
+The NAME=value detector finds a pair anywhere in a line, not only at its start: a token in a query string, a JSON field or a request header such as X-Api-Key, which is how secrets sit in pasted logs. The name may be quoted and may use hyphens. When a message is stopped, the guard names the line the secret is on. The icon is Simon's drawing on a square canvas with a soft green background.
+
 ## 0.1.38, 2026-09-27
 
 The NAME=value detector now matches a name that is exactly the keyword: API_KEY=, TOKEN=, SECRET=, PASSWORD= and their lower-case forms. Before, it needed at least one character in front of the keyword, so DB_PASSWORD= was caught and API_KEY= was not, in files and in messages alike. The descriptions of the file rule and the message rule now say that a bare random string with no name and no known prefix is not caught.

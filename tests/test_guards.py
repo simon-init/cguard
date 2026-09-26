@@ -41,6 +41,18 @@ def decide(tool, tool_input, cwd, profile="standard", **overrides):
 
 
 class Patterns(unittest.TestCase):
+    def test_secrets_inside_log_lines(self):
+        v = "Xk9mQ2vLp8zR4nW7tYb3Qc5Hd8"
+        for line in (f"2026-09-27T01:00:00Z INFO GET /v1/items?api_key={v}&page=2 200",
+                     '{"level":"info","token":"' + v + '","msg":"login"}',
+                     f"Sep 27 01:00:00 host app[123]: X-Api-Key: {v}",
+                     f"DEBUG env AWS_SECRET_ACCESS_KEY={v}{v} loaded"):
+            self.assertIsNotNone(patterns.find_secret(line), line)
+        for line in ("INFO token refreshed for user 42 in 120ms", "DEBUG password_reset_requested=true",
+                     "WARN api_key_id=k_01 rate limited", 'headers = {"Authorization": build_auth_header(token)}',
+                     "api_key: Optional[str] = None"):
+            self.assertIsNone(patterns.find_secret(line), line)
+
     def test_prefixed_formats_are_found(self):
         self.assertEqual(patterns.find_secret(f"key = {FAKE_ANTHROPIC}"), "an Anthropic API key")
         self.assertEqual(patterns.find_secret(FAKE_AWS), "an AWS access key")
@@ -361,6 +373,7 @@ class HookProcess(unittest.TestCase):
                                 "user_prompt": f"why does boto fail with {key}?"})
         self.assertEqual(r.returncode, 2, r.stderr)
         self.assertIn("rotate", r.stderr)
+        self.assertIn("on line 1", r.stderr)
         self.assertNotIn(key, r.stderr)
         self.assertEqual(r.stdout.strip(), "")
 

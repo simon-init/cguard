@@ -74,10 +74,12 @@ for _rid, _desc, _rx, _ent, _grp in _IMPORTED:
         pass
 
 # KEY=value or KEY: value, where the name says secret and the value is long.
+# The name may sit anywhere in a line: a line of its own, a JSON field, a request header such
+# as X-Api-Key, or a query string. It starts at a word boundary and may be quoted.
 GENERIC = re.compile(
-    r"(?im)^\s*(?:export\s+)?(?:[A-Za-z_][A-Za-z0-9_]*\.)?((?:[A-Za-z_][A-Za-z0-9_]*)?"
-    r"(?:SECRET|TOKEN|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|ACCESS_KEY|CREDENTIAL)"
-    r"[A-Za-z0-9_]*)\s*[=:]\s*['\"]?([A-Za-z0-9_\-+/=.@!%*~^?]{12,})(?=[\s'\"#,;]|$)"
+    r"(?i)(?<![A-Za-z0-9_])(?:export\s+)?(?:[A-Za-z_][A-Za-z0-9_]*\.)?[\"']?((?:[A-Za-z_][A-Za-z0-9_\-]*)?"
+    r"(?:SECRET|TOKEN|PASSWORD|PASSWD|API[_\-]?KEY|PRIVATE[_\-]?KEY|ACCESS[_\-]?KEY|CREDENTIAL)"
+    r"[A-Za-z0-9_\-]*)[\"']?\s*[=:]\s*[\"']?([A-Za-z0-9_\-+/=.@!%*~^?]{12,})(?=[\s'\"#,;&}\]]|$)"
 )
 # A value that is a name from code rather than a literal: snake_case, CONSTANT_CASE, camelCase,
 # or a dotted path such as self.token_cache.

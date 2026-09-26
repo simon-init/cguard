@@ -118,7 +118,7 @@ RULES = [
      f"## How it works\n"
      f"Before a tool touches a file, the hook opens that file itself and reads the first 64 KB, which is the whole file for almost every configuration or source file. Across one tool call it reads no more than 4 MB in total. It looks for two things.\n\n"
      f"- {FORMATS} known formats with a fixed shape: private key blocks, keys for the major clouds, AI providers, payment and messaging services, Google service account files, kubeconfig keys, connection strings and URLs that carry a password, bearer tokens and JSON web tokens. {OWN_FORMATS} are cguard's own, {IMPORTED_FORMATS} are imported from the gitleaks rule set (MIT), fixed-prefix rules only, refreshed with tools/sync_gitleaks.py.\n"
-     f"- Any NAME=value or NAME: value line where NAME contains SECRET, TOKEN, PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or CREDENTIAL, and the value is at least 12 characters of key-like text, looks random, and is not a name from the code around it.\n\n"
+     f"- Any NAME=value or NAME: value pair, on a line of its own or inside one, in a JSON field, a request header such as X-Api-Key or a query string, where NAME contains SECRET, TOKEN, PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or CREDENTIAL, and the value is at least 12 characters of key-like text, looks random, and is not a name from the code around it.\n\n"
      f"Placeholders such as your_api_key_here, <fill in> or a run of the same character pass. The file content is read by the hook, never by the model.\n\n"
      f"## What it does not catch\n"
      f"- A secret past the first 64 KB of a large file.\n"
@@ -157,7 +157,7 @@ RULES = [
     ("secrets.prompt", "Secrets", "Secrets pasted into the chat",
      "Stop a message that holds a key before it is sent, and say to rotate it.",
      "## How it works\n"
-     "Before a message you send reaches the model, the hook reads it with the same detectors as the file rule: the known key formats, and NAME=value lines with a random value. If it finds one, the message is stopped. Claude Code erases it, and it is never sent. You see one line that names the kind of key and says what to do.\n\n"
+     "Before a message you send reaches the model, the hook reads it with the same detectors as the file rule: the known key formats, and NAME=value pairs with a random value, wherever they sit in a line. If it finds one, the message is stopped. Claude Code erases it, and it is never sent. You see one line that names the kind of key, the line it is on, and what to do. Pasted logs are the common case: a token in a query string, a JSON field or a header is found, and the line number tells you where to redact.\n\n"
      "## Why it exists\n"
      "A key pasted into the chat by mistake travels to the model with every later request, and the transcript keeps it. The moment before it is sent is the only moment it is still private.\n\n"
      "## Modes\n"

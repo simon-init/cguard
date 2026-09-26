@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cguard import audit, config, guards, patterns  # noqa: E402
 
 
-BLOCKED = ("cguard: your message holds {label} and was not sent. Claude Code erased it, and nothing left this machine.\n"
+BLOCKED = ("cguard: your message holds {label}{where} and was not sent. Claude Code erased it, and nothing left this machine.\n"
            "Remove the key and send the message again. The key is still in your terminal history and your clipboard.\n"
            "If it was pasted anywhere else, rotate it.\n"
            "To show a key on purpose: cguard set secrets.prompt ask, then set it back to deny.")
@@ -36,7 +36,9 @@ def prompt_check(data, cfg, cwd):
         audit.record({"kind": "decision", "tool": "prompt", "rule": "secrets.prompt", "mode": mode,
                       "what": f"a message that holds {label}", "cwd": cwd, "target": label})
     if mode == "deny":
-        sys.stderr.write(BLOCKED.format(label=label) + "\n")
+        line = next((i for i, one in enumerate(text.splitlines(), 1) if patterns.find_secret(one)), None)
+        where = f" on line {line}" if line else ""
+        sys.stderr.write(BLOCKED.format(label=label, where=where) + "\n")
         sys.exit(2)
     print(EXPOSED.format(label=label))
 

@@ -29,8 +29,8 @@ yourself, and how to allow it. Claude relays that to you. You are never left wit
 
 Modes. Each rule is deny, ask or off. Deny and ask cost no tokens: a deny is one short
 message, an ask is a prompt drawn by Claude Code itself. Two profiles set the defaults:
-personal, for a machine that holds only your own work, and shared, for a machine with
-other people's data on it, which also turns on the boundary and the package guard.
+own-work, for a machine that holds only your own work, and client-data, for a machine
+with other people's data on it, which also turns on the boundary and the package guard.
 
 Detection. Secrets are found by content, not by file name. The hook reads at most the
 first 4 KB of a file and looks for {FORMATS} known key formats, plus NAME=value lines where
@@ -208,8 +208,8 @@ RULES = [
      "folder, /tmp, or a folder on the allowlist.\n\n"
      "Why it exists. A session opened in one project has no business in your browser profile, "
      "another client's folder or your documents. On a machine that holds only your own work this "
-     "is more obstacle than protection, which is why the personal profile leaves it off and the "
-     "shared profile sets it to ask.\n\n"
+     "is more obstacle than protection, which is why the own-work profile leaves it off and the "
+     "client-data profile sets it to ask.\n\n"
      "Way forward given to Claude: open a Claude session in that folder instead, or allow the "
      "folder with:  cguard allow paths <folder>"),
     ("packages.install", "Boundary", "Installing packages",
@@ -219,7 +219,7 @@ RULES = [
      "apt and gem, and asks for confirmation with the command shown.\n\n"
      "Why it exists. Every install pulls code from the internet onto the machine, and an "
      "assistant can do it dozens of times an hour without anyone noticing what arrived. Off by "
-     "default on the personal profile, ask on the shared profile."),
+     "default on the own-work profile, ask on the client-data profile."),
 
     ("session.check", "Session", "Hygiene check at session start",
      "At session start, warn once if .env is not ignored or a tracked file looks like it holds a secret.",
@@ -235,8 +235,21 @@ for _r in RULES:
     if _r[1] not in GROUPS:
         GROUPS.append(_r[1])
 
+PROFILE_INFO = {
+    "own-work": ("This machine holds only your own work",
+                 "Everything that protects secrets, commits and the machine is on. The boundary guard and the "
+                 "package guard are off, because on a machine with nothing but your own projects they are more "
+                 "obstacle than protection."),
+    "client-data": ("This machine also holds other people's data",
+                    "Everything from own-work, plus: the boundary guard asks before Claude touches anything outside "
+                    "the project folder, the package guard asks before anything is installed, and the session check "
+                    "warns once when a repository is not keeping its secrets out of git. For a laptop with client "
+                    "folders, a shared workstation, or a server."),
+}
+OLD_PROFILE_NAMES = {"personal": "own-work", "shared": "client-data"}
+
 PROFILES = {
-    "personal": {
+    "own-work": {
         "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny",
         "commit.secrets": "deny", "commit.binaries": "deny", "commit.add_all": "deny",
         "commit.no_verify": "deny", "commit.force_push": "ask",
@@ -246,7 +259,7 @@ PROFILES = {
         "paths.boundary": "off", "packages.install": "off",
         "session.check": "off",
     },
-    "shared": {
+    "client-data": {
         "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny",
         "commit.secrets": "deny", "commit.binaries": "deny", "commit.add_all": "deny",
         "commit.no_verify": "deny", "commit.force_push": "ask",
@@ -280,7 +293,7 @@ def rule(rule_id):
     raise KeyError(rule_id)
 
 
-def default_config(profile="personal"):
+def default_config(profile="own-work"):
     return {"profile": profile, "rules": dict(PROFILES[profile]), "lists": json.loads(json.dumps(DEFAULT_LISTS)),
             "audit": {"decisions": True, "commands": False}}
 
@@ -293,7 +306,9 @@ def load():
             user = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             user = {}
-    profile = user.get("profile") if user.get("profile") in PROFILES else "personal"
+    profile = OLD_PROFILE_NAMES.get(user.get("profile"), user.get("profile"))
+    if profile not in PROFILES:
+        profile = "own-work"
     cfg = default_config(profile)
     for rid, mode in (user.get("rules") or {}).items():
         if rid in cfg["rules"] and mode in MODES:
@@ -341,3 +356,9 @@ def remove_from_list(cfg, name, value):
         value = os.path.abspath(os.path.expanduser(value))
     if value in cfg["lists"].get(name, []):
         cfg["lists"][name].remove(value)
+
+
+def profile_differences(name):
+    """Rules whose mode in `name` differs from the other profile: [(rule_id, mine, theirs)]."""
+    other = next(n for n in PROFILES if n != name)
+    return [(rid, PROFILES[name][rid], PROFILES[other][rid]) for rid in rule_ids() if PROFILES[name][rid] != PROFILES[other][rid]]

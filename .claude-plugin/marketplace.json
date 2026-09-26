@@ -1,12 +1,12 @@
 {
   "name": "cguard",
-  "owner": { "name": "Simon Ertushi" },
+  "owner": { "name": "simon-init" },
   "plugins": [
     {
       "name": "cguard",
       "source": "./",
       "description": "Keeps secrets, other people's documents and destructive commands out of a Claude Code session. Every refusal comes with a way forward.",
-      "version": "0.1.1"
+      "version": "0.1.2"
     }
   ]
 }

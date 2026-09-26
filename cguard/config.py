@@ -1,136 +1,233 @@
 """Rules, profiles and the user's configuration file.
 
 Every rule has a mode: deny, ask or off. A profile is a set of default modes.
-The user's file at ~/.claude/cguard.json holds the chosen profile, any
-rule overrides, and the allowlists. The hook reads it on every call, so a change
+The user's file at ~/.claude/cguard.json holds the chosen profile, any rule
+overrides, and the allowlists. The hook reads it on every call, so a change
 applies to the next tool use without a restart.
 """
 import json
 import os
 from pathlib import Path
 
+from . import patterns
+
 CONFIG_PATH = Path(os.environ.get("CGUARD_CONFIG") or os.path.expanduser("~/.claude/cguard.json"))
 AUDIT_PATH = Path(os.environ.get("CGUARD_AUDIT") or os.path.expanduser("~/.claude/cguard.log"))
 PLUGIN_ROOT = Path(os.environ.get("CLAUDE_PLUGIN_ROOT") or Path(__file__).resolve().parent.parent)
 
 MODES = ("deny", "ask", "off")
+FORMATS = len(patterns.PREFIXED)
 
-# id, group, title, short description, long description
+ABOUT = f"""cguard is one hook that Claude Code runs before every Read, Edit, Write, Grep and
+shell command. The hook sees the tool call, decides, and prints one of three answers:
+nothing, which lets the call through; ask, which makes Claude Code show you the call and
+wait for a yes; or deny, which refuses it. The model sees only the decision and its
+reason, never the content the hook looked at.
+
+Every refusal has the same shape: what was blocked, why in one line, how to do it
+yourself, and how to allow it. Claude relays that to you. You are never left with a wall.
+
+Modes. Each rule is deny, ask or off. Deny and ask cost no tokens: a deny is one short
+message, an ask is a prompt drawn by Claude Code itself. Two profiles set the defaults:
+personal, for a machine that holds only your own work, and shared, for a machine with
+other people's data on it, which also turns on the boundary and the package guard.
+
+Detection. Secrets are found by content, not by file name. The hook reads at most the
+first 4 KB of a file and looks for {FORMATS} known key formats, plus NAME=value lines where
+the name says secret and the value looks random. That list grew out of the secret scanner
+in ShipSecure. It covers the common cases and cannot cover every one: a secret past the
+first 4 KB, a format not on the list, or a secret that reads as ordinary words all pass.
+The deny list in Claude Code's settings, which blocks known file names, is the layer
+below this one, and a real sandbox is the layer below that.
+
+Everything the hook decides is written to a local log, with secrets masked, so you can
+always ask what happened and why: cguard audit, cguard why."""
+
+# id, group, title, short, long
 RULES = [
     ("secrets.files", "Secrets", "Files that hold secret material",
      "Refuse to read, edit, grep or shell-touch a file whose content looks like a key or credential.",
-     "The path-based deny list in settings.json catches known names such as .env and the SSH folder. "
-     "This rule catches the rest by content. Before a tool touches a file, the first 4 KB are read by "
-     "the hook, never by the model. If they hold a private key block, a cloud or API key with a known "
-     "prefix, a connection string with a password, or a KEY=value line whose value is long and random, "
-     "the call is refused. Placeholders like your_api_key_here pass.\n\n"
-     "Blocked: Read, Edit, Write, Grep on the file, and any shell command whose arguments name it.\n\n"
-     "Way forward given to Claude: open the file yourself, or move the secret out of it, or allow the "
-     "exact path with:  cguard allow paths <path>"),
+     f"How it works. Before a tool touches a file, the hook opens that file itself and reads its "
+     f"first 4 KB. It looks for two things.\n\n"
+     f"First, {FORMATS} known formats with a fixed shape: private key blocks, keys for AWS, Anthropic, "
+     f"OpenAI, GitHub, GitLab, Hugging Face, Replicate, npm, Stripe, Square, SendGrid, Slack and "
+     f"Langfuse, Google service account files, kubeconfig keys, connection strings and URLs that "
+     f"carry a password, bearer tokens and JSON web tokens. This list grew out of the secret scanner "
+     f"in ShipSecure.\n\n"
+     f"Second, any line of the form NAME=value or NAME: value where NAME contains SECRET, TOKEN, "
+     f"PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or CREDENTIAL, and the value is at least 12 "
+     f"characters and looks random, measured as 3.0 bits of entropy or more. Placeholders such as "
+     f"your_api_key_here, <fill in> or a run of the same character pass.\n\n"
+     f"The file content is read by the hook, never by the model. Only the decision reaches Claude.\n\n"
+     f"What it does not catch: a secret past the first 4 KB, a format that is not on the list, and a "
+     f"secret that reads as ordinary words. It is a net for the common case. The deny list in Claude "
+     f"Code's settings, which blocks known names such as .env and the SSH folder, stays in place "
+     f"underneath it.\n\n"
+     f"Way forward given to Claude: open the file yourself, or move the secret out of it, or allow "
+     f"the exact path with:  cguard allow paths <path>"),
     ("secrets.write", "Secrets", "Writing key material",
      "Refuse to write a private key block into any file.",
-     "A private key that Claude writes to disk is a private key that was in the transcript first. "
-     "Edit and Write calls whose content contains a private key header are refused. Keys are generated "
-     "by tools such as ssh-keygen and never pass through the assistant."),
+     "How it works. Edit and Write calls carry their new content in the tool call. The hook "
+     "searches that content for the headers that begin a private key: the BEGIN ... PRIVATE KEY "
+     "block, PuTTY key files, and age secret keys. If one is there, the call is refused.\n\n"
+     "Why it exists. A key that Claude writes to disk was in the transcript first, and the "
+     "transcript leaves the machine with every request. Keys are generated by tools such as "
+     "ssh-keygen and never typed by an assistant.\n\n"
+     "What it does not catch: key material without a recognisable header, and a key written by a "
+     "program Claude ran rather than by Claude directly."),
     ("secrets.env", "Secrets", "Environment variables that hold secrets",
      "Refuse env, printenv and echo of a variable whose name says it is a secret.",
-     "Environment variables are where API keys actually live. Printing them puts the value into the "
-     "transcript, and the transcript is context, which leaves the machine with every request.\n\n"
-     "Blocked: env or printenv with no arguments, printenv NAME where NAME looks secret, echo or printf "
-     "of $NAME where NAME contains SECRET, TOKEN, PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or "
-     "CREDENTIAL, and reads of /proc/*/environ. echo $HOME and echo $PATH pass."),
+     "How it works. The hook reads the shell command as text and looks for four things: env or "
+     "printenv with no arguments, which print every variable; printenv NAME where NAME contains "
+     "SECRET, TOKEN, PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or CREDENTIAL; echo or printf of "
+     "$NAME with such a name; and reads of /proc/*/environ, which is another process's environment. "
+     "echo $HOME and printenv PATH pass.\n\n"
+     "Why it exists. Environment variables are where API keys actually live. Printing one puts "
+     "the value into the transcript, and the transcript is context, which leaves the machine with "
+     "every request.\n\n"
+     "What it does not catch: a variable with an innocent name, and a value read by a script "
+     "rather than printed by the shell. If Claude needs to know whether a variable is set, it can "
+     "test for that without printing the value."),
 
     ("commit.secrets", "Commits", "Secrets in a commit",
      "Scan what git add or git commit is about to record and refuse it if a secret is in it.",
-     "On git add, the files being added are scanned. On git commit, the staged diff is scanned, or the "
-     "working-tree diff when -a is used. The same detectors as secrets.files apply to the added lines.\n\n"
-     "Way forward: remove the secret from the file, put it in an ignored .env or in the deployment "
-     "platform, then commit again. A file that is legitimately committed with a token-shaped value, such "
-     "as a test fixture, is allowed with:  cguard allow commit_paths <path>"),
+     "How it works. On git add, the hook opens each file being added, or every file under a "
+     "folder being added up to 500 files, and runs the same detectors as the secrets.files rule. "
+     "On git commit, it asks git for the staged diff, or the working-tree diff when -a is used, "
+     "and scans the added lines only. A hit refuses the command and names the file.\n\n"
+     "Why it exists. A secret in a commit is a secret in every clone, forever, and removing it "
+     "later means rewriting history on every machine that pulled it.\n\n"
+     "What it does not catch: a secret that none of the detectors recognise, and anything staged "
+     "and pushed outside a Claude session.\n\n"
+     "Way forward: move the value into an ignored .env file or into the deployment platform, then "
+     "commit again. A file that legitimately holds a token-shaped value, such as a test fixture, "
+     "is allowed with:  cguard allow commit_paths <path>"),
     ("commit.binaries", "Commits", "Documents and large files in a commit",
      "Refuse git add of PDFs, office documents, archives, databases, and anything over the size limit.",
-     "Real documents end up in repositories by accident: a browser download folder still set to the "
-     "project, a test file dropped in the wrong place. Once pushed they are in history on every clone. "
-     "This rule refuses git add of files whose extension is on the binary list, or whose size is above "
-     "the limit (default 5 MB), unless the path is on the commit allowlist.\n\n"
+     "How it works. On git add, and on git commit for files already staged, the hook checks each "
+     "new file's extension against the binary list, and its size against the limit, 5 MB by "
+     "default. Both live in the configuration file. A path on the commit allowlist passes.\n\n"
+     "Why it exists. Real documents end up in repositories by accident: a browser download folder "
+     "still set to the project, a test file dropped in the wrong place. Once pushed, they are in "
+     "history on every clone. This rule was written the day after exactly that happened.\n\n"
+     "What it does not catch: a document with an extension that is not on the list, and a file "
+     "under the size limit with a text extension.\n\n"
      "Way forward: move the file out of the repository, or allow the exact path with:  "
-     "cguard allow commit_paths <path>.  The list and the limit live in the configuration file."),
+     "cguard allow commit_paths <path>"),
     ("commit.add_all", "Commits", "git add -A and git add .",
      "Refuse blanket adds. Files are added by name.",
-     "git add -A, git add --all, git add . and git add * sweep in everything in the working tree, "
-     "including files the user put there for other reasons. Adding named paths forces a look at what is "
-     "going in. This is the rule that would have stopped the classic accident of committing a stray "
-     "download.\n\nWay forward given to Claude: run git status, then git add <each path>."),
+     "How it works. The hook reads the git command and refuses git add when its arguments contain "
+     "-A, --all, . or *. Adding named paths, or git add -u for tracked files only, passes.\n\n"
+     "Why it exists. A blanket add sweeps in everything in the working tree, including files you "
+     "put there for other reasons. Adding by name forces a look at what is going in, and it is "
+     "the rule that would have stopped the classic accident of committing a stray download.\n\n"
+     "Way forward given to Claude: run git status, then git add each intended path."),
     ("commit.no_verify", "Commits", "Skipping commit hooks",
      "Refuse git commit or git push with --no-verify.",
-     "--no-verify exists to skip pre-commit and pre-push checks, which are usually exactly the checks "
-     "that stop secrets and broken code from leaving the machine. If a hook is wrong, fix the hook."),
+     "How it works. The hook refuses git commit and git push when their arguments contain "
+     "--no-verify, or the short form -n on commit.\n\n"
+     "Why it exists. That flag exists to skip pre-commit and pre-push hooks, and those hooks are "
+     "usually exactly the checks that stop secrets and broken code from leaving the machine. If a "
+     "hook is wrong, the hook gets fixed. If it must be skipped once, a person does it."),
     ("commit.force_push", "Commits", "Force push",
      "Ask before git push --force, -f or --force-with-lease.",
-     "A force push rewrites history that other clones and other people may hold. Sometimes it is the "
-     "right thing, for example after removing a secret from history. It is never the routine thing, so "
-     "a person confirms it each time."),
+     "How it works. The hook asks for confirmation when a git push carries --force, -f, "
+     "--force-with-lease, or a refspec that begins with +.\n\n"
+     "Why it exists. A force push rewrites history that other clones and other people may hold. "
+     "Sometimes it is the right thing, for example after removing a secret from history. It is "
+     "never the routine thing, so a person confirms it each time and sees the full command."),
 
     ("commands.fatal", "Commands", "Commands that destroy a machine",
      "Refuse rm -rf on /, ~ or ., mkfs, dd onto a disk, fork bombs.",
-     "These have no legitimate use inside an assistant session and no undo. rm -rf / or ~ or . deletes "
-     "everything the shell can reach. mkfs formats a disk. dd of=/dev/... overwrites one. If one of them "
-     "is ever needed, a person types it in a terminal they are looking at."),
+     "How it works. The hook splits the shell line into commands and looks at each. rm with a "
+     "recursive flag whose target is /, /*, ~, $HOME, ., .., * or a top-level system folder is "
+     "refused. So is mkfs in any form, dd with a disk device as its output, a redirect onto a disk "
+     "device, shred on a device, chmod 777 on /, and the fork bomb.\n\n"
+     "Why it exists. None of these has a legitimate use inside an assistant session, and none has "
+     "an undo. If one is ever needed, a person types it in a terminal they are looking at.\n\n"
+     "What it does not catch: the same effect reached through a script, a variable that expands "
+     "to one of those targets, or a command the hook does not know. This is a list, not a proof."),
     ("commands.destructive", "Commands", "Commands that lose work",
      "Ask before git reset --hard, git clean -f, chmod -R 777, docker prune, DROP TABLE and similar.",
-     "Each of these throws something away that git or a backup may not have: uncommitted changes, "
-     "untracked files, file permissions, Docker images and volumes, a database table. They are "
-     "legitimate often enough that refusing them outright would be an obstacle, so they ask, and the "
-     "question shows exactly what will be lost.\n\n"
-     "The list: git reset --hard, git clean with -f, git checkout -- . and git restore . (discard all "
-     "changes), git branch -D, chmod -R 777, chown -R, docker system prune, docker volume prune, "
-     "docker run with --privileged or the Docker socket mounted, DROP TABLE, DROP DATABASE, TRUNCATE, "
-     "kill -9 -1."),
+     "How it works. The hook matches the shell line against a list of commands that throw "
+     "something away, and asks for confirmation with the command shown in full.\n\n"
+     "The list: git reset --hard, git clean with -f, git checkout -- . and git restore . which "
+     "discard all changes, git branch -D, chmod -R 777, chown -R, docker system prune, docker "
+     "volume prune, docker image prune, docker run with --privileged or with the Docker socket "
+     "mounted, DROP TABLE, DROP DATABASE, DROP SCHEMA, TRUNCATE, and kill -9 -1.\n\n"
+     "Why it asks rather than refuses. Each of these is legitimate often enough that a refusal "
+     "would be an obstacle. What they share is that git or a backup may not have what they "
+     "delete: uncommitted changes, untracked files, permissions, images and volumes, a table. A "
+     "yes from a person who has read the command is the right price."),
     ("commands.sudo", "Commands", "sudo",
      "Ask before any command run as root.",
-     "sudo removes the last safety net under everything else on this list. The ask shows the full "
-     "command so a person can read it before it runs with full rights."),
+     "How it works. The hook asks for confirmation when a command, or any command in a chain, "
+     "begins with sudo, doas or su.\n\n"
+     "Why it exists. Root removes the last safety net under everything else on this list. The ask "
+     "shows the full command so a person reads it before it runs with full rights. On a machine "
+     "where Claude never needs root, set this to deny."),
 
     ("exfil.pipe_to_shell", "Data leaving", "Download piped into a shell",
      "Refuse curl or wget piped into sh, bash, python or similar.",
-     "curl URL | sh downloads a script and runs it without anyone reading it. It is how many tools tell "
-     "you to install them, and it is also the most common way a developer machine is compromised.\n\n"
-     "Way forward given to Claude: download the script to a file, show the user where it is, let them "
-     "read it, then run it from the file."),
+     "How it works. The hook refuses a shell line where curl or wget is piped, directly or "
+     "through sudo, into sh, bash, zsh, fish, dash, python, perl, node or ruby.\n\n"
+     "Why it exists. curl URL | sh downloads a script and runs it before anyone has read it. It "
+     "is how many tools tell you to install them, and it is also the most common way a developer "
+     "machine is compromised.\n\n"
+     "Way forward given to Claude: download the script to a file, tell the user where it is so "
+     "they can read it, then run it from the file."),
     ("exfil.upload", "Data leaving", "Sending files to another host",
      "Ask before curl uploads, scp, rsync, sftp or nc to a host that is not on the allowlist.",
-     "A file leaving the machine should be a decision, not a side effect. curl with -d @file, -F, -T or "
-     "--upload-file, and scp, rsync, sftp, nc and socat to a remote host, ask first. Hosts on the "
-     "allowlist pass. Add your own server with:  cguard allow hosts <host>.  localhost is always "
-     "allowed."),
+     "How it works. The hook looks for three shapes: curl with a data or upload flag such as -d, "
+     "--data-binary, -F, -T or --upload-file; scp, rsync or sftp with a host:path argument; and "
+     "nc, ncat, netcat or socat with a host. It reads the host out of the command and asks unless "
+     "that host is localhost or on the allowlist.\n\n"
+     "Why it exists. A file leaving the machine should be a decision, not a side effect of a "
+     "command that looked routine.\n\n"
+     "What it does not catch: an upload done by a program Claude wrote, a host hidden in a "
+     "variable, and tools not on the list.\n\n"
+     "Way forward: add your own machines once with:  cguard allow hosts <host>"),
 
     ("self.protect", "The guard itself", "Protect the guard and the credentials",
-     "Refuse edits to the plugin, its configuration file, settings.json and the credentials file.",
-     "A prompt injection that says 'first disable the security hook' should have nowhere to go. Claude "
-     "may read the configuration but may not edit it with Edit, Write or a shell redirect. Changes go "
-     "through the command line tool, which Claude can run when you ask it to:  cguard set <rule> "
-     "<mode>,  cguard allow <list> <value>,  cguard profile <name>."),
+     "Refuse edits to the plugin, its configuration file, Claude Code's own settings and the credentials file.",
+     "How it works. The hook refuses Edit and Write on the plugin's own files, on its "
+     "configuration file, on Claude Code's settings file and on the credentials file, and it "
+     "refuses shell commands that both name one of those paths and contain a way of writing to "
+     "it: a redirect, sed -i, tee, rm, mv, cp, truncate, chmod, or an interpreter. Reading them "
+     "is allowed. The cguard command line is allowed, because that is the intended way to change "
+     "the configuration.\n\n"
+     "Why it exists. A prompt injection that says 'first disable the security hook' should have "
+     "nowhere to go. Changes go through the tool, which Claude runs only when you ask:  cguard "
+     "set <rule> <mode>,  cguard allow <list> <value>,  cguard profile <name>."),
 
     ("paths.boundary", "Boundary", "Stay inside the project",
      "Ask before touching a file outside the working directory and the allowed folders.",
-     "A session opened in one project has no business in your browser profile, another client's folder "
-     "or your documents. Reads, edits and shell commands that name an existing path outside the working "
-     "directory ask first. Always allowed: the working directory, the Claude configuration folder, /tmp "
-     "and the paths on the allowlist.\n\nWay forward given to Claude: open a Claude session in that "
-     "folder instead, or allow the folder with:  cguard allow paths <folder>.  Off by default on "
-     "the personal profile, ask on the shared profile."),
+     "How it works. For Read, Edit, Write and Grep the hook checks the target path. For a shell "
+     "command it checks every argument that names an existing file or folder. A path outside the "
+     "working directory asks for confirmation, unless it is under the Claude configuration "
+     "folder, /tmp, or a folder on the allowlist.\n\n"
+     "Why it exists. A session opened in one project has no business in your browser profile, "
+     "another client's folder or your documents. On a machine that holds only your own work this "
+     "is more obstacle than protection, which is why the personal profile leaves it off and the "
+     "shared profile sets it to ask.\n\n"
+     "Way forward given to Claude: open a Claude session in that folder instead, or allow the "
+     "folder with:  cguard allow paths <folder>"),
     ("packages.install", "Boundary", "Installing packages",
      "Ask before pip install, npm install, npx, cargo install, brew, pacman, apt and similar.",
-     "Every install pulls code from the internet onto the machine, and an assistant can do it dozens of "
-     "times an hour without anyone noticing what arrived. The ask shows the package names. Off by "
+     "How it works. The hook matches the shell line against the install commands of the common "
+     "package managers: pip, uv, npm, pnpm, yarn, bun, npx, cargo, go, brew, pacman, paru, yay, "
+     "apt and gem, and asks for confirmation with the command shown.\n\n"
+     "Why it exists. Every install pulls code from the internet onto the machine, and an "
+     "assistant can do it dozens of times an hour without anyone noticing what arrived. Off by "
      "default on the personal profile, ask on the shared profile."),
 
     ("session.check", "Session", "Hygiene check at session start",
      "At session start, warn once if .env is not ignored or a tracked file looks like it holds a secret.",
-     "Runs once per session, in the repository the session opened in. It checks that .env appears in "
-     ".gitignore, and scans up to 500 tracked files for secret material. If something is found, one "
-     "warning line is added to the session's context. Modes deny and ask both mean on. Off by default "
-     "because it costs a few tokens per session."),
+     "How it works. Once per session, in the repository the session opened in, the hook checks "
+     "that .env appears in .gitignore and scans up to 500 tracked files with the same detectors as "
+     "the secrets.files rule. If something is found, one warning line is added to the session's "
+     "context and Claude tells you once.\n\n"
+     "Modes deny and ask both mean on. Off by default because it costs a few tokens per session."),
 ]
 
 GROUPS = []

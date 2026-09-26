@@ -1,17 +1,25 @@
-"""The settings screen. Arrow keys move, space cycles a rule's mode, right arrow opens the
-full description, left arrow returns, s saves, q quits. Standard library only.
+"""The configuration screen.
+
+Up and down move. Enter or space cycles a rule's mode; d, a and o set it directly.
+Right arrow opens the full description, left arrow returns. s saves, q quits.
+Standard library only.
 """
 import curses
 import textwrap
 
-from . import config
+from . import __version__, config
 
-HELP_LIST = "up/down move   space cycle mode   right details   p profile   s save   q quit"
-HELP_DETAIL = "up/down scroll   space cycle mode   left back   s save   q quit"
+TEXT_WIDTH = 76
+HELP_LIST = [("↑↓", "move"), ("enter/space", "cycle mode"), ("d a o", "deny ask off"), ("→", "details"),
+             ("p", "profile"), ("s", "save"), ("q", "quit")]
+HELP_DETAIL = [("↑↓", "scroll"), ("enter/space", "cycle mode"), ("d a o", "deny ask off"), ("←", "back"),
+               ("s", "save"), ("q", "quit")]
+
+C_ACCENT, C_DENY, C_ASK, C_OFF, C_DIM, C_SEL = 1, 2, 3, 4, 5, 6
 
 
 def _items():
-    out = []
+    out = [("about", "About cguard")]
     for group in config.GROUPS:
         out.append(("group", group))
         for r in config.RULES:
@@ -30,79 +38,131 @@ class Screen:
         self.scr = stdscr
         self.cfg = config.load()
         self.items = _items()
-        self.cursor = next(i for i, it in enumerate(self.items) if it[0] == "rule")
+        self.cursor = 0
         self.view = "list"
         self.scroll = 0
         self.dirty = False
-        self.message = ""
+        self.message = "welcome. every refusal comes with a way forward."
         curses.curs_set(0)
-        self.colors = False
-        if curses.has_colors():
+        self.colors = curses.has_colors()
+        if self.colors:
             curses.start_color()
             curses.use_default_colors()
-            curses.init_pair(1, curses.COLOR_RED, -1)
-            curses.init_pair(2, curses.COLOR_YELLOW, -1)
-            curses.init_pair(3, curses.COLOR_GREEN, -1)
-            curses.init_pair(4, curses.COLOR_CYAN, -1)
-            self.colors = True
+            curses.init_pair(C_ACCENT, curses.COLOR_CYAN, -1)
+            curses.init_pair(C_DENY, curses.COLOR_RED, -1)
+            curses.init_pair(C_ASK, curses.COLOR_YELLOW, -1)
+            curses.init_pair(C_OFF, curses.COLOR_GREEN, -1)
+            curses.init_pair(C_DIM, curses.COLOR_WHITE, -1)
+            curses.init_pair(C_SEL, curses.COLOR_BLACK, curses.COLOR_CYAN)
+
+    def pair(self, n, extra=0):
+        return (curses.color_pair(n) if self.colors else 0) | extra
 
     def mode_attr(self, mode):
-        if not self.colors:
-            return curses.A_NORMAL
-        return curses.color_pair({"deny": 1, "ask": 2, "off": 3}[mode])
+        return self.pair({"deny": C_DENY, "ask": C_ASK, "off": C_OFF}[mode], curses.A_BOLD)
 
     # ------------------------------------------------------------------ drawing
+    def put(self, y, x, text, attr=0):
+        h, w = self.scr.getmaxyx()
+        if 0 <= y < h and x < w:
+            try:
+                self.scr.addnstr(y, x, text, max(0, w - x - 1), attr)
+            except curses.error:
+                pass
+
+    def header(self, w):
+        self.put(0, 0, " " * (w - 1), self.pair(C_SEL))
+        self.put(0, 1, "cguard", self.pair(C_SEL, curses.A_BOLD))
+        self.put(0, 8, f"v{__version__}", self.pair(C_SEL))
+        tag = "guards for a Claude Code session"
+        self.put(0, 16, tag, self.pair(C_SEL))
+        right = f"profile: {self.cfg['profile']}" + ("   * unsaved" if self.dirty else "")
+        self.put(0, max(17 + len(tag), w - len(right) - 2), right, self.pair(C_SEL, curses.A_BOLD))
+
+    def footer(self, h, w, keys):
+        self.put(h - 1, 0, " " * (w - 1), curses.A_REVERSE)
+        x = 1
+        for key, what in keys:
+            self.put(h - 1, x, f" {key} ", curses.A_REVERSE | curses.A_BOLD)
+            x += len(key) + 3
+            self.put(h - 1, x, what, curses.A_REVERSE)
+            x += len(what) + 2
+        self.put(h - 2, 1, self.message, self.pair(C_ACCENT))
+
     def draw(self):
         self.scr.erase()
         h, w = self.scr.getmaxyx()
-        header = f" cguard settings    profile: {self.cfg['profile']}{'    (unsaved changes)' if self.dirty else ''}"
-        self.scr.addnstr(0, 0, header.ljust(w), w - 1, curses.A_REVERSE)
+        self.header(w)
         if self.view == "list":
             self.draw_list(h, w)
-            footer = HELP_LIST
+            self.footer(h, w, HELP_LIST)
         else:
             self.draw_detail(h, w)
-            footer = HELP_DETAIL
-        self.scr.addnstr(h - 2, 0, (" " + self.message).ljust(w), w - 1, curses.color_pair(4) if self.colors else curses.A_NORMAL)
-        self.scr.addnstr(h - 1, 0, (" " + footer).ljust(w), w - 1, curses.A_REVERSE)
+            self.footer(h, w, HELP_DETAIL)
         self.scr.refresh()
 
     def draw_list(self, h, w):
-        top = 2
-        visible = h - 5
+        top, visible = 2, h - 5
         first = max(0, min(self.cursor - visible // 2, len(self.items) - visible))
         for row, idx in enumerate(range(first, min(len(self.items), first + visible))):
             kind, value = self.items[idx]
             y = top + row
+            selected = idx == self.cursor
             if kind == "group":
-                self.scr.addnstr(y, 1, value, w - 2, curses.A_BOLD)
+                self.put(y, 2, value.upper(), self.pair(C_ACCENT, curses.A_BOLD))
+                self.put(y, 3 + len(value), " " + "─" * max(0, w - len(value) - 6), self.pair(C_DIM))
+                continue
+            if kind == "about":
+                self.put(y, 1, ("▶ " if selected else "  ") + "About cguard", curses.A_BOLD if selected else 0)
+                self.put(y, 16, "  how it works, what it cannot see, where the log is", self.pair(C_DIM))
                 continue
             r = config.rule(value)
             mode = self.cfg["rules"][value]
-            selected = idx == self.cursor
-            prefix = "> " if selected else "  "
-            self.scr.addnstr(y, 1, prefix, 2, curses.A_BOLD if selected else curses.A_NORMAL)
-            self.scr.addnstr(y, 3, f"[{mode:<4}]", 6, self.mode_attr(mode) | (curses.A_BOLD if selected else 0))
-            line = f" {r['title']}  -  {r['short']}"
-            self.scr.addnstr(y, 9, line, max(1, w - 10), curses.A_BOLD if selected else curses.A_NORMAL)
+            self.put(y, 1, "▶ " if selected else "  ", curses.A_BOLD)
+            self.put(y, 3, f"[{mode:<4}]", self.mode_attr(mode))
+            self.put(y, 10, r["title"], curses.A_BOLD if selected else 0)
+            self.put(y, 11 + len(r["title"]), "  " + r["short"], self.pair(C_DIM))
+
+    def body_lines(self, w):
+        kind, value = self.items[self.cursor]
+        width = min(TEXT_WIDTH, max(30, w - 6))
+        lines = []
+        if kind == "about":
+            text = config.ABOUT
+        else:
+            r = config.rule(value)
+            text = r["short"] + "\n\n" + r["long"]
+        for para in text.split("\n\n"):
+            lines.extend(textwrap.wrap(" ".join(para.split()), width=width) or [""])
+            lines.append("")
+        if kind == "rule":
+            lines.append("Modes: deny refuses, ask confirms with you first, off disables the rule.")
+            lines.append(f"From any terminal:  cguard set {value} <deny|ask|off>")
+        return lines
 
     def draw_detail(self, h, w):
         kind, value = self.items[self.cursor]
-        r = config.rule(value)
-        mode = self.cfg["rules"][value]
-        self.scr.addnstr(2, 1, r["title"], w - 2, curses.A_BOLD)
-        self.scr.addnstr(3, 1, f"{r['id']}   group: {r['group']}   mode: ", w - 2)
-        self.scr.addnstr(3, 1 + len(f"{r['id']}   group: {r['group']}   mode: "), mode, 5, self.mode_attr(mode) | curses.A_BOLD)
-        body = []
-        for para in (r["short"] + "\n\n" + r["long"]).split("\n\n"):
-            body.extend(textwrap.wrap(para, width=max(20, w - 4)) or [""])
-            body.append("")
-        body.append(f"Modes: deny refuses, ask confirms with you first, off disables this rule.")
-        body.append(f"Change it here with space, or from any terminal: cguard set {r['id']} <deny|ask|off>")
-        visible = h - 8
+        if kind == "about":
+            self.put(2, 3, "About cguard", self.pair(C_ACCENT, curses.A_BOLD))
+            self.put(3, 3, "─" * min(TEXT_WIDTH, w - 6), self.pair(C_DIM))
+        else:
+            r = config.rule(value)
+            mode = self.cfg["rules"][value]
+            self.put(2, 3, r["title"], self.pair(C_ACCENT, curses.A_BOLD))
+            meta = f"{r['id']}   {r['group']}   mode "
+            self.put(3, 3, meta, self.pair(C_DIM))
+            self.put(3, 3 + len(meta), mode, self.mode_attr(mode))
+            self.put(4, 3, "─" * min(TEXT_WIDTH, w - 6), self.pair(C_DIM))
+        body = self.body_lines(w)
+        top = 5 if kind == "rule" else 4
+        visible = h - top - 3
         self.scroll = max(0, min(self.scroll, max(0, len(body) - visible)))
         for i, line in enumerate(body[self.scroll:self.scroll + visible]):
-            self.scr.addnstr(5 + i, 2, line, w - 3)
+            self.put(top + i, 3, line)
+        if self.scroll + visible < len(body):
+            self.put(h - 3, 3, "↓ more", self.pair(C_DIM))
+        elif self.scroll > 0:
+            self.put(h - 3, 3, "↑ back to the top", self.pair(C_DIM))
 
     # ------------------------------------------------------------------ actions
     def move(self, delta):
@@ -111,15 +171,17 @@ class Screen:
             idx += delta
             if idx < 0 or idx >= len(self.items):
                 return
-            if self.items[idx][0] == "rule":
+            if self.items[idx][0] != "group":
                 self.cursor = idx
                 return
 
-    def cycle_mode(self):
+    def set_mode(self, mode=None):
         kind, value = self.items[self.cursor]
-        self.cfg["rules"][value] = _cycle(self.cfg["rules"][value])
+        if kind != "rule":
+            return
+        self.cfg["rules"][value] = mode or _cycle(self.cfg["rules"][value])
         self.dirty = True
-        self.message = f"{value} = {self.cfg['rules'][value]}"
+        self.message = f"{value} = {self.cfg['rules'][value]}   (s to save)"
 
     def cycle_profile(self):
         names = list(config.PROFILES)
@@ -128,18 +190,18 @@ class Screen:
         fresh["lists"], fresh["audit"] = self.cfg["lists"], self.cfg["audit"]
         self.cfg = fresh
         self.dirty = True
-        self.message = f"profile {new}: rule modes reset to its defaults"
+        self.message = f"profile {new}: every rule reset to its defaults   (s to save)"
 
     def save(self):
         path = config.save(self.cfg)
         self.dirty = False
-        self.message = f"saved to {path}"
+        self.message = f"saved to {path}. the next tool call uses it."
 
     def confirm_quit(self):
         if not self.dirty:
             return True
         h, w = self.scr.getmaxyx()
-        self.scr.addnstr(h - 2, 0, " unsaved changes: [s]ave and quit, [d]iscard, or any other key to stay ".ljust(w), w - 1, curses.A_REVERSE)
+        self.put(h - 2, 1, "unsaved changes:  s save and quit   d discard and quit   any other key stays", self.pair(C_ASK, curses.A_BOLD))
         self.scr.refresh()
         key = self.scr.getch()
         if key in (ord("s"), ord("S")):
@@ -147,6 +209,7 @@ class Screen:
             return True
         if key in (ord("d"), ord("D")):
             return True
+        self.message = ""
         return False
 
     def loop(self):
@@ -160,14 +223,23 @@ class Screen:
                 self.save()
             elif key in (ord("p"), ord("P")) and self.view == "list":
                 self.cycle_profile()
-            elif key == ord(" "):
-                self.cycle_mode()
+            elif key in (ord(" "), curses.KEY_ENTER, 10, 13):
+                if self.items[self.cursor][0] == "about" and self.view == "list":
+                    self.view, self.scroll = "detail", 0
+                else:
+                    self.set_mode()
+            elif key in (ord("d"), ord("D")):
+                self.set_mode("deny")
+            elif key in (ord("a"), ord("A")):
+                self.set_mode("ask")
+            elif key in (ord("o"), ord("O")):
+                self.set_mode("off")
             elif self.view == "list":
                 if key in (curses.KEY_UP, ord("k")):
                     self.move(-1)
                 elif key in (curses.KEY_DOWN, ord("j")):
                     self.move(1)
-                elif key in (curses.KEY_RIGHT, curses.KEY_ENTER, 10, 13, ord("l")):
+                elif key in (curses.KEY_RIGHT, ord("l")):
                     self.view, self.scroll = "detail", 0
             else:
                 if key in (curses.KEY_UP, ord("k")):

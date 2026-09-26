@@ -89,10 +89,13 @@ cguard config
 The keys on that screen:
 
 - Up and down move between rules.
-- Space cycles a rule's mode.
-- The right arrow opens the full description. Up and down scroll it.
+- Enter or space cycles a rule's mode. `d`, `a` and `o` set deny, ask or off directly.
+- The right arrow opens the full description, with how the rule works and what it does
+  not catch. Up and down scroll it.
 - The left arrow returns to the list.
-- `s` saves and `q` quits.
+- `p` switches profile. `s` saves and `q` quits.
+
+The first entry, About cguard, explains the mechanism, the detectors and their limits.
 
 Inside a Claude session, `/cguard:config`, `/cguard:audit` and
 `/cguard:why` show the same things.

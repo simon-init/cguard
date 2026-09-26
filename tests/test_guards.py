@@ -173,6 +173,14 @@ class BashCommands(unittest.TestCase):
                     "aws s3 ls s3://bucket", "prisma migrate dev", "helm list"):
             self.assertIsNone(self.bash(cmd), cmd)
 
+    def test_reading_a_protected_file_with_a_stray_redirect_is_fine(self):
+        settings = os.environ["CGUARD_SETTINGS"]
+        self.assertIsNone(self.bash(f"grep -n permissions {settings} 2>/dev/null"))
+        for cmd in (f"echo x > {settings}", f"echo x >> {settings}", f"cat x | tee {settings}"):
+            d = self.bash(cmd)
+            self.assertIsNotNone(d, cmd)
+            self.assertEqual(d.rule, "self.protect", cmd)
+
     def test_denylist_install_and_remove_are_the_users(self):
         for cmd in ("cguard denylist remove", "cguard denylist install", "python3 -m cguard.cli denylist remove"):
             d = self.bash(cmd)

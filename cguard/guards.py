@@ -12,7 +12,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import config, patterns
+from . import config, denylist, patterns
 
 MAX_WALK = 500          # files scanned when a directory is added
 MAX_TOKENS = 200
@@ -58,7 +58,7 @@ def _protected_paths():
     home = Path(os.path.expanduser("~"))
     claude = home / ".claude"
     return [Path(config.PLUGIN_ROOT).resolve(), config.CONFIG_PATH.resolve(),
-            (claude / "settings.json").resolve(), (claude / (".credentials" + ".json")).resolve(),
+            denylist.SETTINGS_PATH.resolve(), (claude / (".credentials" + ".json")).resolve(),
             (claude / "hooks").resolve()]
 
 
@@ -351,7 +351,9 @@ def check_bash(command, cwd, cfg):
         if _cli_token(token):
             continue
         for candidate in _expand(token, cwd) if ("/" in token or token.startswith("~")) else []:
-            if _is_protected(candidate) and re.search(r">|\bsed\s+-i|\btee\b|\brm\b|\bmv\b|\bcp\b|\btruncate\b|\bchmod\b|\bpython3?\b|\bperl\b|\binstall\b", command):
+            writes = re.search(r"\bsed\s+-i|\brm\b|\bmv\b|\bcp\b|\btruncate\b|\bchmod\b|\bpython3?\b|\bperl\b|\binstall\b", command)
+            aimed = re.search(r"(?:>>?|\btee\b(?:\s+-a)?)\s*[\"']?" + re.escape(token), command)
+            if _is_protected(candidate) and (writes or aimed):
                 d = _dec(cfg, "self.protect", f"a command that writes to {candidate}, which belongs to the guard or holds credentials.",
                          "the guard's own files and the credentials are not changed from inside a session.",
                          "run `cguard config` in a terminal.",

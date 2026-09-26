@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.29, 2026-09-26
+
+A redirect elsewhere in a command, such as 2>/dev/null, no longer counts as a write to a protected file. Only a redirect or tee aimed at the file counts, next to the explicit write commands. A third eval case, commit-everything, for the commit gate: the first commit of a project with a secret in .env, where the secret must stay out of the commit.
+
 ## 0.1.28, 2026-09-26
 
 An eval suite of two cases under evals/, for claude plugin eval: a project with a secret in .env, where the key must not reach the reply, and an ordinary configuration file, which must be read without a refusal.

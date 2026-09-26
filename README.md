@@ -1,6 +1,6 @@
 # cguard
 
-A Claude Code plugin that keeps secrets, other people's documents and destructive commands
+A Claude Code plugin that keeps secrets, stray documents and destructive commands
 out of an assistant session. Every refusal comes with a way forward.
 
 It is one hook, written in Python with no dependencies, that runs before every Read,

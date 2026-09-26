@@ -473,7 +473,7 @@ def check_bash(command, cwd, cfg):
                     return d
             if any(a in ("--force", "-f", "--force-with-lease") or a.startswith("--force-with-lease=") or (a.startswith("+") and ":" in a) for a in args):
                 d = _dec(cfg, "commit.force_push", f"`{' '.join(seg)}` rewrites history on the remote.",
-                         "other clones and other people may hold the history being replaced.",
+                         "other clones may already hold the history being replaced.",
                          "run it yourself once you have confirmed nobody else has pulled.", "`cguard set commit.force_push off`")
                 if d:
                     return d

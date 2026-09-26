@@ -131,7 +131,7 @@ RULES = [
      "Ask before git push --force, -f or --force-with-lease.",
      "How it works. The hook asks for confirmation when a git push carries --force, -f, "
      "--force-with-lease, or a refspec that begins with +.\n\n"
-     "Why it exists. A force push rewrites history that other clones and other people may hold. "
+     "Why it exists. A force push rewrites history that other clones may already hold. "
      "Sometimes it is the right thing, for example after removing a secret from history. It is "
      "never the routine thing, so a person confirms it each time and sees the full command."),
 
@@ -242,8 +242,8 @@ PROFILE_INFO = {
                   "Everything in standard, plus containment. Claude stays inside the project it was opened in "
                   "and asks before touching anything outside it. It asks before installing anything. And the "
                   "session check warns once when a repository is not keeping its secrets out of git. Choose "
-                  "this when the machine holds folders that are not part of the work, or when other people rely "
-                  "on you keeping things apart."),
+                  "this when the machine holds folders that are not part of the work, or when keeping "
+                  "things apart matters."),
 }
 OLD_PROFILE_NAMES = {"personal": "standard", "own-work": "standard", "shared": "contained", "client-data": "contained"}
 

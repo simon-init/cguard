@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8, 2026-09-26
+
+Wording: no text frames the guards around whose data is on the machine.
+
 ## 0.1.7, 2026-09-26
 
 Twenty-one more key formats with a fixed prefix, 44 in all: Google, DigitalOcean, Tailscale, Doppler, PyPI, Shopify, Linear, Netlify, Fly, Postman, Groq, Perplexity, xAI, Docker Hub, Slack app, Telegram, Discord webhooks, Twilio, Mailchimp, Supabase.

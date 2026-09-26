@@ -12,7 +12,7 @@ from pathlib import Path
 from . import __version__, config, denylist
 from .tui import C_ACCENT, C_ASK, C_DIM, C_OFF, C_SEL, TEXT_WIDTH, _fit, _footer_rows, init_colors, show_cursor, wrap_markup
 
-TAGLINE = "Stay in control of your agent."
+TAGLINE = "Move fast, stay in control."
 LOGO = [
     "                                           _",
     "  ___    __ _   _   _    __ _   _ __    __| |",
@@ -115,13 +115,14 @@ class Wizard:
                     "commands that print a secret.\n\n"
                     f"This is {os_name()}. {rules_for_this_os()} of the rules apply here. The rest are for the other "
                     "systems, never match, and cost nothing.")
+            where = short(denylist.SETTINGS_PATH)
             if self.added is not None:
-                text += f"\n\n## On this machine\nAdded {self.added}. Claude Code loads them when a session starts."
+                text += f"\n\n## On this machine\nAdded {self.added} rules to {where}. Claude Code loads them when a session starts."
                 return text, [("Continue", "", self.next)]
             if not missing:
-                text += f"\n\n## On this machine\nAll {len(denylist.RULES)} rules are already in place."
+                text += f"\n\n## On this machine\nAll {len(denylist.RULES)} rules are already in {where}. Nothing to add."
                 return text, [("Continue", "", self.next)]
-            text += f"\n\n## On this machine\n{len(present)} of {len(denylist.RULES)} rules are in place, {len(missing)} are missing."
+            text += f"\n\n## On this machine\n{len(present)} of {len(denylist.RULES)} rules are in {where}. {len(missing)} are missing."
             return text, [(f"Add the {len(missing)} missing rules", f"writes to {short(denylist.SETTINGS_PATH)} now", self.add_rules),
                           ("Skip for now", "later: cguard denylist install", self.next)]
         if self.step == 3:
@@ -261,6 +262,7 @@ class Wizard:
                 for line in LOGO:
                     self.put(y, 3, line, self.pair(C_ACCENT, curses.A_BOLD))
                     y += 1
+                y += 1
             else:
                 self.put(y, 3, "cguard", self.pair(C_ACCENT, curses.A_BOLD))
                 y += 1

@@ -33,7 +33,7 @@ The hook looks at the call and answers in one of three ways.
 
 The model sees only the decision and its reason, never the content the hook looked at.
 
-## Every refusal has a way forward
+## Every blocked action comes with a safe alternative
 The same four lines every time: what was blocked, why in one line, how to do it yourself, and how to allow it. You are never left with a wall.
 
 ## Modes and profiles
@@ -125,7 +125,7 @@ RULES = [
      f"- A format that is not on the list.\n"
      f"- A secret that reads as ordinary words.\n\n"
      f"The deny list in Claude Code's own configuration, which blocks known names such as .env and the SSH folder, stays in place underneath.\n\n"
-     f"## Way forward\n"
+     f"## Safe alternative\n"
      f"Open the file yourself, or move the secret out of it, or allow the exact path:\n"
      f"cguard allow paths <path>"),
     ("secrets.write", "Secrets", "Writing key material",
@@ -164,7 +164,7 @@ RULES = [
      "## What it does not catch\n"
      "- A secret that none of the detectors recognise.\n"
      "- Anything staged and pushed outside a Claude session.\n\n"
-     "## Way forward\n"
+     "## Safe alternative\n"
      "Move the value into an ignored .env file or into the deployment platform, then commit again. A file that legitimately holds a token-shaped value, such as a test fixture, is allowed with:\n"
      "cguard allow commit_paths <path>"),
     ("commit.binaries", "Commits", "Documents and large files in a commit",
@@ -179,7 +179,7 @@ RULES = [
      "## What it does not catch\n"
      "- A document with an extension that is not on the list.\n"
      "- A file under the size limit with a text extension.\n\n"
-     "## Way forward\n"
+     "## Safe alternative\n"
      "Move the file out of the repository, or allow the exact path:\n"
      "cguard allow commit_paths <path>"),
     ("commit.add_all", "Commits", "git add -A and git add .",
@@ -188,7 +188,7 @@ RULES = [
      "The hook refuses git add when its arguments contain -A, --all, . or *. Adding named paths passes, and so does git add -u, which touches tracked files only.\n\n"
      "## Why it exists\n"
      "A blanket add sweeps in everything in the working tree, including files you put there for other reasons. Adding by name forces a look at what is going in. It is the rule that stops the classic accident of committing a stray download.\n\n"
-     "## Way forward\n"
+     "## Safe alternative\n"
      "Claude runs git status, then adds each intended path by name."),
     ("commit.no_verify", "Commits", "Skipping commit hooks",
      "Refuse git commit or git push with --no-verify.",
@@ -256,7 +256,7 @@ RULES = [
      "The hook looks at every pipe in the line. When curl or wget feeds a command that runs its input as a script, the line is refused: sh, bash, zsh, fish, dash, python, perl, node or ruby with no script of their own, directly or through sudo. A pipe into a command that only reads the data passes, such as python3 -c, python3 -m json.tool, perl -ne, node -e or jq. bash -c \"$(curl ...)\" and bash <(curl ...) run a download as code too, and are refused.\n\n"
      "## Why it exists\n"
      "curl URL | sh downloads a script and runs it before anyone has read it. It is how many tools tell you to install them, and it is also the most common way a developer machine is compromised.\n\n"
-     "## Way forward\n"
+     "## Safe alternative\n"
      "Claude downloads the script to a file, tells you where it is so you can read it, then runs it from the file."),
     ("exfil.upload", "Data leaving", "Sending files to another host",
      "Ask before curl uploads, scp, rsync, sftp or nc to a host that is not on the allowlist.",
@@ -271,7 +271,7 @@ RULES = [
      "- An upload done by a program Claude wrote.\n"
      "- A host hidden in a variable.\n"
      "- Tools not on the list.\n\n"
-     "## Way forward\n"
+     "## Safe alternative\n"
      "Add your own machines once:\n"
      "cguard allow hosts <host>"),
 
@@ -286,7 +286,7 @@ RULES = [
      "Reading them is allowed. The cguard command line is allowed, because that is the intended way to change the configuration.\n\n"
      "## Why it exists\n"
      "A prompt injection that says \"first disable the security hook\" should have nowhere to go.\n\n"
-     "## Way forward\n"
+     "## Safe alternative\n"
      "Changes go through the tool, which Claude runs only when you ask:\n"
      "cguard set <rule> <mode>\n"
      "cguard allow <list> <value>\n"
@@ -300,7 +300,7 @@ RULES = [
      "A path outside the working directory asks for confirmation, unless it is under the Claude configuration folder, /tmp, or a folder on the allowlist.\n\n"
      "## Why it exists\n"
      "A session opened in one project has no business in the rest of the machine: a browser profile, a different project, a folder of documents. When every folder on the machine is part of the work this is more obstacle than protection, which is why the standard profile leaves it off and the contained profile sets it to ask.\n\n"
-     "## Way forward\n"
+     "## Safe alternative\n"
      "Open a Claude session in that folder instead, or allow the folder:\n"
      "cguard allow paths <folder>"),
     ("packages.install", "Boundary", "Installing packages",

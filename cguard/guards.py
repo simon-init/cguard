@@ -2,7 +2,7 @@
 
 A Decision carries the rule, the mode (deny or ask), what was blocked, why in one line,
 what the user can do themselves, and how to allow it. The hook turns that into the
-reason Claude reads, so no refusal ever arrives without a way forward.
+reason Claude reads, so every blocked action arrives with a safe alternative.
 """
 import glob
 import os

@@ -1,13 +1,13 @@
 {
   "name": "cguard",
   "owner": { "name": "simon-init" },
-  "description": "Guards for a Claude Code session: secrets, stray documents and destructive commands stay out, and every refusal comes with a way forward.",
+  "description": "Guards for a Claude Code session: secrets, stray documents and destructive commands stay out, and every blocked action comes with a safe alternative.",
   "plugins": [
     {
       "name": "cguard",
       "source": "./",
-      "description": "Keeps secrets, stray documents and destructive commands out of a Claude Code session. Every refusal comes with a way forward.",
-      "version": "0.1.35"
+      "description": "Keeps secrets, stray documents and destructive commands out of a Claude Code session. Every blocked action comes with a safe alternative.",
+      "version": "0.1.36"
     }
   ]
 }

@@ -37,7 +37,7 @@ PROFILE = (
 COMMANDS = (
     "Five commands you will use. Claude can run the last two for you when you ask.\n\n"
     "- cguard config: the settings screen, every rule with a description.\n"
-    "- cguard why: the last refusal, explained, with the way forward.\n"
+    "- cguard why: the last blocked action, explained, with the safe alternative.\n"
     "- cguard audit: the last decisions.\n"
     "- cguard set <rule> <deny|ask|off>: change one rule.\n"
     "- cguard allow <paths|hosts|commit_paths> <value>: allow one path, computer or file.\n\n"

@@ -1,7 +1,7 @@
 # cguard
 
 A Claude Code plugin that keeps secrets, stray documents and destructive commands
-out of an assistant session. Every refusal comes with a way forward.
+out of an assistant session. Every blocked action comes with a safe alternative.
 
 It is one hook, written in Python with no dependencies, that runs before every Read,
 Edit, Write, Grep and Bash call. It reads the first 64 KB of a file the tool is about

@@ -113,7 +113,7 @@ class Screen:
         self.view = "list"
         self.scroll = 0
         self.dirty = False
-        self.message = "welcome. every refusal comes with a way forward."
+        self.message = "welcome. every blocked action comes with a safe alternative."
         show_cursor(False)
         self.colors = init_colors()
 

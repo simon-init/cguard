@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.36, 2026-09-27
+
+The description line is "Every blocked action comes with a safe alternative." The same words replace "way forward" in the manifests, the README, the welcome line of the settings screen, the setup screen, the why command and the rule descriptions, where the section is now called Safe alternative.
+
 ## 0.1.35, 2026-09-27
 
 An icon for the directory listing. The eval fixtures no longer place a web address beside a fake key, which the directory's scanner read as a credential sent to a host.

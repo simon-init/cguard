@@ -23,7 +23,7 @@ the model. Only the decision does.
 | `commands.fatal` | deny | Refuse `rm -rf` on `/`, `~` or `.`, `mkfs`, `dd` onto a disk, fork bombs |
 | `commands.destructive` | ask | Confirm before `git reset --hard`, `git clean -f`, `docker prune`, `DROP TABLE`, `terraform destroy`, `kubectl delete`, migration resets, cloud CLI deletes, `docker compose down -v` and similar |
 | `commands.sudo` | ask | Confirm before any command run as root |
-| `exfil.pipe_to_shell` | deny | Refuse `curl ... \| sh` and `wget ... \| bash` |
+| `exfil.pipe_to_shell` | deny | Refuse a download piped into an interpreter that would run it, such as `curl ... \| sh`. A pipe into `python3 -c` or `jq` is data and passes |
 | `exfil.upload` | ask | Confirm before curl uploads, scp, rsync, sftp or nc to a host that is not on the allowlist |
 | `self.protect` | deny | Refuse edits to the plugin, its configuration file, Claude Code's own configuration file and the credentials file |
 | `paths.boundary` | off | Confirm before touching a file outside the working directory. Ask on the contained profile |

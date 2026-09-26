@@ -251,9 +251,9 @@ RULES = [
      "On a machine where Claude never needs root, set this to deny."),
 
     ("exfil.pipe_to_shell", "Data leaving", "Download piped into a shell",
-     "Refuse curl or wget piped into sh, bash, python or similar.",
+     "Refuse curl or wget piped into a shell or interpreter that would run the download.",
      "## How it works\n"
-     "The hook refuses a shell line where curl or wget is piped, directly or through sudo, into sh, bash, zsh, fish, dash, python, perl, node or ruby.\n\n"
+     "The hook looks at every pipe in the line. When curl or wget feeds a command that runs its input as a script, the line is refused: sh, bash, zsh, fish, dash, python, perl, node or ruby with no script of their own, directly or through sudo. A pipe into a command that only reads the data passes, such as python3 -c, python3 -m json.tool, perl -ne, node -e or jq. bash -c \"$(curl ...)\" and bash <(curl ...) run a download as code too, and are refused.\n\n"
      "## Why it exists\n"
      "curl URL | sh downloads a script and runs it before anyone has read it. It is how many tools tell you to install them, and it is also the most common way a developer machine is compromised.\n\n"
      "## Way forward\n"
@@ -278,7 +278,7 @@ RULES = [
     ("self.protect", "The guard itself", "Protect the guard and the credentials",
      "Refuse edits to the plugin, its configuration file, Claude Code's own configuration and the credentials file.",
      "## How it works\n"
-     "The hook refuses Edit and Write on four places, and shell commands that both name one of them and contain a way of writing to it: a redirect, sed -i, tee, rm, mv, cp, truncate, chmod, or an interpreter.\n\n"
+     "The hook refuses Edit and Write on four places, and shell commands that both name one of them and contain a way of writing to it: a redirect, sed -i, tee, rm, mv, cp, truncate, chmod, or an interpreter. It also refuses `cguard set self.protect off` and `cguard denylist install` or `remove` from inside a session; those are yours to run in a terminal. Setting the rule back to deny is allowed from a session.\n\n"
      "- The plugin's own files.\n"
      "- Its configuration file.\n"
      "- Claude Code's configuration file.\n"

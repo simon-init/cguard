@@ -305,7 +305,50 @@ DESTRUCTIVE_RE = [
     (re.compile(r"\bdropdb\b|\bredis-cli\b[^|;&]*\bflush(all|db)\b"), "this drops a database or empties a Redis store"),
 ]
 
-PIPE_TO_SHELL = re.compile(r"\b(curl|wget)\b[^|]*\|\s*(?:sudo\s+(?:-\S+\s+)*)?(sh|bash|zsh|fish|dash|python3?|perl|node|ruby)\b")
+INTERPRETERS = {"sh", "bash", "zsh", "fish", "dash", "python", "python3", "perl", "node", "ruby"}
+DOWNLOAD = re.compile(r"\b(curl|wget)\b")
+# bash -c "$(curl ...)" and bash <(curl ...) run a download as code without a pipe.
+DOWNLOAD_AS_CODE = re.compile(r"\b(?:sh|bash|zsh|dash|python3?|perl|node|ruby)\b[^|;&]*(?:-[ce]\s*[\"']?\$\(|<\()\s*(?:curl|wget)\b")
+
+
+def _runs_stdin(tokens):
+    """True when this command would run what it reads on standard input as a script.
+    python3 -c, python3 -m, perl -ne, node -e and a script file argument read stdin as data."""
+    toks = list(tokens)
+    if toks and toks[0] == "sudo":
+        toks = toks[1:]
+        while toks and toks[0].startswith("-"):
+            toks = toks[1:]
+    if not toks:
+        return False
+    name = os.path.basename(toks[0])
+    if name not in INTERPRETERS:
+        return False
+    rest = toks[1:]
+    positional = any(not t.startswith("-") for t in rest)
+    if name in ("sh", "bash", "zsh", "dash", "fish"):
+        return "-s" in rest or ("-c" not in rest and not positional)
+    if name.startswith("python"):
+        return "-c" not in rest and "-m" not in rest and not positional
+    if name == "node":
+        return not any(t in ("-e", "--eval", "-p", "--print") for t in rest) and not positional
+    return not any(t.startswith("-") and "e" in t[1:] for t in rest) and not positional
+
+
+def _piped_download(command):
+    """True when a curl or wget stage feeds a command that runs its input as a script."""
+    for chunk in re.split(r"\|\||&&|;", command):
+        stages = chunk.split("|")
+        for left, right in zip(stages, stages[1:]):
+            if not DOWNLOAD.search(left):
+                continue
+            try:
+                tokens = shlex.split(right, posix=True)
+            except ValueError:
+                tokens = right.split()
+            if _runs_stdin(tokens):
+                return True
+    return DOWNLOAD_AS_CODE.search(command) is not None
 UPLOAD_FLAGS = {"-d", "--data", "--data-binary", "--data-raw", "--data-urlencode", "--data-ascii", "-F", "--form",
                 "-T", "--upload-file", "--json"}
 REMOTE_COPY = {"scp", "rsync", "sftp"}
@@ -323,6 +366,16 @@ def check_bash(command, cwd, cfg):
     if not command.strip():
         return None
     segments = _segments(command)
+
+    # The switch that protects the guard is turned off in a terminal, never from inside a session.
+    for seg in segments:
+        if (len(seg) >= 4 and "set" in seg and "self.protect" in seg and seg[-1] in ("off", "ask")
+                and (seg[0].endswith("cguard") or "cguard.cli" in seg)):
+            d = _dec(cfg, "self.protect", f"`cguard set self.protect {seg[-1]}`, which loosens the guard's own protection.",
+                     "the switch that protects the guard is turned off by you in a terminal, never from inside a session.",
+                     "run `cguard set self.protect off` in a terminal, or `cguard config`. Setting it back to deny is allowed from here.")
+            if d:
+                return d
 
     # Commands that destroy a machine
     for seg in segments:
@@ -379,7 +432,7 @@ def check_bash(command, cwd, cfg):
                 return d
 
     # Download piped into a shell
-    if PIPE_TO_SHELL.search(command):
+    if _piped_download(command):
         d = _dec(cfg, "exfil.pipe_to_shell", "a download piped straight into an interpreter.",
                  "the script runs before anyone has read it; this is how machines get compromised.",
                  "download it to a file first, for example `curl -fsSL <url> -o /tmp/install.sh`, read it, then run it from the file.",

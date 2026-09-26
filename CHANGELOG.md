@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.41, 2026-09-27
+
+The icon's C is centred again. The three stripes behind it step down and grow: the top one shortest, the bottom one longest and set lower, all fading towards their tails.
+
 ## 0.1.40, 2026-09-27
 
 The icon has three speed stripes behind the C, fading towards the tail, so the C reads as moving to the right. The drawing sits a little further right to keep the whole centred.

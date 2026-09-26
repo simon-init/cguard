@@ -31,9 +31,8 @@ the model. Only the decision does.
 | `session.check` | off | If `.env` is not ignored, or a tracked file holds a secret, warn once per session |
 
 An `ask` opens Claude Code's own permission dialog, Yes, No and "tell Claude what to do
-differently", with the reason shown in it. A hook's answer is honoured regardless of the
-permission mode, so the dialog appears even when you run with permission prompts
-switched off.
+differently", with the reason shown in it. A hook's answer is honoured in every permission
+mode. With permission prompts switched off, the dialog still appears.
 
 ## Known secret paths
 

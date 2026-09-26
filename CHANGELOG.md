@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.42, 2026-09-27
+
+The message block did not block. The hook signalled it with exit code 2, and the manifest runs `python3 ... || python ...` for Windows, so the non-zero exit started the fallback, which found no input and exited 0, and Claude Code let the message through. The block now travels as a JSON decision on standard output with exit 0, the same way the permission decisions do. Found by pasting a test line after a restart.
+
 ## 0.1.41, 2026-09-27
 
 The icon's C is centred again. The three stripes behind it step down and grow: the top one shortest, the bottom one longest and set lower, all fading towards their tails.

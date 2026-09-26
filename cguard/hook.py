@@ -38,8 +38,12 @@ def prompt_check(data, cfg, cwd):
     if mode == "deny":
         line = next((i for i, one in enumerate(text.splitlines(), 1) if patterns.find_secret(one)), None)
         where = f" on line {line}" if line else ""
-        sys.stderr.write(BLOCKED.format(label=label, where=where) + "\n")
-        sys.exit(2)
+        # As JSON with exit 0, not as exit code 2: the manifest runs `python3 ... || python ...`
+        # for Windows, and a non-zero exit from the first would start the fallback and turn
+        # the block into a pass.
+        print(json.dumps({"decision": "block", "reason": BLOCKED.format(label=label, where=where),
+                          "hookSpecificOutput": {"hookEventName": "UserPromptSubmit"}}))
+        return
     print(EXPOSED.format(label=label))
 
 

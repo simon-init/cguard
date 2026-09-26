@@ -370,12 +370,13 @@ class HookProcess(unittest.TestCase):
     def test_prompt_with_a_key_is_stopped(self):
         key = "AKIA" + "Q7M2XK9LP4WN8RT1"
         r = self.run_hook_full({"hook_event_name": "UserPromptSubmit", "cwd": TMP,
-                                "user_prompt": f"why does boto fail with {key}?"})
-        self.assertEqual(r.returncode, 2, r.stderr)
-        self.assertIn("rotate", r.stderr)
-        self.assertIn("on line 1", r.stderr)
-        self.assertNotIn(key, r.stderr)
-        self.assertEqual(r.stdout.strip(), "")
+                                "user_prompt": f"dumped pgamx\nchecking\nwhy does boto fail with {key}?"})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        out = json.loads(r.stdout)
+        self.assertEqual(out["decision"], "block")
+        self.assertIn("rotate", out["reason"])
+        self.assertIn("on line 3", out["reason"])
+        self.assertNotIn(key, r.stdout)
 
     def test_prompt_without_a_key_passes(self):
         r = self.run_hook_full({"hook_event_name": "UserPromptSubmit", "cwd": TMP,

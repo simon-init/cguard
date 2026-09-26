@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.16, 2026-09-26
+
+Arrow glyphs beside the words in the footer.
+
 ## 0.1.15, 2026-09-26
 
 The footer and the scroll hints use words instead of arrow glyphs.

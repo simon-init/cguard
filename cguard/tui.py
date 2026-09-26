@@ -10,10 +10,10 @@ import textwrap
 from . import __version__, config
 
 TEXT_WIDTH = 76
-HELP_LIST = [("up/down", "move"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
-             ("right", "details"), ("s", "save"), ("q", "quit")]
-HELP_DETAIL = [("up/down", "scroll"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
-               ("left", "back"), ("s", "save"), ("q", "quit")]
+HELP_LIST = [("↑↓ up/down", "move"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
+             ("→ right", "details"), ("s", "save"), ("q", "quit")]
+HELP_DETAIL = [("↑↓ up/down", "scroll"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
+               ("← left", "back"), ("s", "save"), ("q", "quit")]
 
 C_ACCENT, C_DENY, C_ASK, C_OFF, C_DIM, C_SEL = 1, 2, 3, 4, 5, 6
 

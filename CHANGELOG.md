@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.20, 2026-09-26
+
+Known secret paths grows from 140 to 460 rules: developer tool tokens, commands that print a secret, more history files, keychains, browsers and messaging apps on macOS and Linux, and best-effort Windows paths.
+
 ## 0.1.19, 2026-09-26
 
 Known secret paths: the plugin carries the 140 deny rules for Claude Code's own permissions and installs the missing ones on request, from the screen or with `cguard denylist install`. The quit prompt says to press any other key to stay.

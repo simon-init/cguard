@@ -72,14 +72,14 @@ DENYLIST_TEXT = """## What it is
 A list of file names and folders that Claude Code refuses to read, edit or touch from a shell, before any hook runs. It lives in Claude Code's own settings file under permissions. A plugin cannot write there by itself, so cguard carries the rules and installs them when you ask.
 
 ## What is on the list
-- SSH keys and the SSH folder, on any path.
-- Environment files: .env, .env.local, .env.production and the like.
-- Private keys and certificates by extension, password databases, Terraform state.
-- Cloud and tool credentials: AWS, Azure, Google Cloud, Hetzner, Kubernetes, GPG, Docker, netrc, git credentials, password stores, rclone, sops.
+- SSH keys and the SSH folder, on any path, and key files by extension: pem, key, p12, pfx, p8, jks, keystore, asc, gpg, age, ovpn, PuTTY.
+- Environment files: .env, .env.local, .env.production and the like. Password databases, Terraform state, htpasswd.
+- Cloud and tool credentials: AWS, Azure, Google Cloud, Hetzner, Kubernetes, GPG, Docker, netrc, git credentials, password stores, rclone, sops, Vault, Pulumi, Doppler, Infisical.
+- Developer tool tokens: GitHub CLI, npm, yarn, PyPI, cargo, gem, composer, maven, gradle, NuGet, pgpass, my.cnf, Databricks, Vercel, Netlify, Fly, Railway, DigitalOcean, Cloudflare, ngrok, Teleport, 1Password CLI, Hugging Face, Codex, OpenAI and Gemini folders.
 - Claude Code's own credentials file.
-- Shell, Python and database history files.
-- Browser profiles.
-- The env and printenv commands.
+- History files: shell, Python, database, Node, Ruby, Redis, Mongo, less, PowerShell.
+- Keychains and keyrings, browser profiles, password managers, messaging apps and mail on Linux, macOS and Windows. The Windows paths are best effort and untested.
+- Commands whose job is to print a secret: gh auth token, the cloud access-token commands, password manager reads, kubectl get secret, heroku config, vercel env pull, doppler, railway, vault, gpg secret export, env and printenv.
 
 ## How it differs from the secrets rule
 The secrets rule looks inside a file and needs to recognise what it finds. This list needs nothing: a matching name is refused outright, whatever is in the file. The two layers cover each other's gaps.

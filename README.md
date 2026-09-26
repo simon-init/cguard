@@ -37,16 +37,21 @@ mode. With permission prompts switched off, the dialog still appears.
 ## Known secret paths
 
 The hook finds secrets by content. Claude Code's own configuration can also refuse files
-by name, before any hook runs: SSH keys, environment files, cloud and password-manager
-credentials, shell history, browser profiles. cguard carries 140 such rules and installs
-them into `~/.claude/settings.json` on request, adding only what is missing:
+by name, before any hook runs. cguard carries 460 such rules for Linux, macOS and Windows
+and installs them into `~/.claude/settings.json` on request, adding only what is missing.
+They cover SSH keys, environment files, cloud and password-manager credentials, developer
+tool tokens, shell history, browser profiles and keychains. They also cover the commands
+whose job is to print a secret. The Windows paths are best effort and untested.
 
 ```
 cguard denylist status
 cguard denylist install
 ```
 
-The same row exists in the configuration screen, under Files by name.
+The same row exists in the configuration screen, under Files by name. The command and the
+screen are run by you. Claude cannot edit `settings.json`, which is the guard's own rule,
+so the plugin cannot install the rules on its own. The list is grouped in
+`cguard/denylist.py` with one comment per group, so the source is the documentation.
 
 Two profiles. `standard` guards secrets, commits and the machine, and lets Claude move
 between folders and install without asking. `contained` adds containment: Claude stays

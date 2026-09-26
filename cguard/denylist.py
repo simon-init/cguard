@@ -36,14 +36,58 @@ RULES = [
     "Write(//**/.env.production)",
     "Write(//**/.env.*.local)",
     "Write(//**/.backup-env)",
-    "Bash(*cat *.env*)",
-    "Bash(*bat *.env*)",
-    "Bash(*less *.env*)",
-    "Bash(*head *.env*)",
-    "Bash(*tail *.env*)",
-    "Bash(*grep *.env*)",
-    "Bash(*source *.env*)",
-    "Bash(*. *.env*)",
+    # A reader with an environment file as an argument. The name is preceded by a space or a
+    # slash and ends the command, or is followed by a space, or continues as .env.local and
+    # the like. The earlier form *cat *.env* also matched os.environ and process.env inside
+    # unrelated text, and refused a search for process.env or a commit message naming .env.
+    "Bash(*cat * .env)",
+    "Bash(*cat * .env *)",
+    "Bash(*cat * .env.*)",
+    "Bash(*cat */.env)",
+    "Bash(*cat */.env *)",
+    "Bash(*cat */.env.*)",
+    "Bash(*bat * .env)",
+    "Bash(*bat * .env *)",
+    "Bash(*bat * .env.*)",
+    "Bash(*bat */.env)",
+    "Bash(*bat */.env *)",
+    "Bash(*bat */.env.*)",
+    "Bash(*less * .env)",
+    "Bash(*less * .env *)",
+    "Bash(*less * .env.*)",
+    "Bash(*less */.env)",
+    "Bash(*less */.env *)",
+    "Bash(*less */.env.*)",
+    "Bash(*head * .env)",
+    "Bash(*head * .env *)",
+    "Bash(*head * .env.*)",
+    "Bash(*head */.env)",
+    "Bash(*head */.env *)",
+    "Bash(*head */.env.*)",
+    "Bash(*tail * .env)",
+    "Bash(*tail * .env *)",
+    "Bash(*tail * .env.*)",
+    "Bash(*tail */.env)",
+    "Bash(*tail */.env *)",
+    "Bash(*tail */.env.*)",
+    "Bash(*grep * .env)",
+    "Bash(*grep * .env *)",
+    "Bash(*grep * .env.*)",
+    "Bash(*grep */.env)",
+    "Bash(*grep */.env *)",
+    "Bash(*grep */.env.*)",
+    "Bash(*source * .env)",
+    "Bash(*source * .env *)",
+    "Bash(*source * .env.*)",
+    "Bash(*source */.env)",
+    "Bash(*source */.env *)",
+    "Bash(*source */.env.*)",
+    "Bash(*. * .env)",
+    "Bash(*. * .env *)",
+    "Bash(*. * .env.*)",
+    "Bash(*. */.env)",
+    "Bash(*. */.env *)",
+    "Bash(*. */.env.*)",
     "Read(//**/*.pem)",
     "Read(//**/*.key)",
     "Read(//**/*.p12)",
@@ -486,6 +530,18 @@ RULES = [
     "Bash(*AppData/Roaming/gcloud*)",
 ]
 
+# Rules that earlier versions installed and that install() and remove() take out again.
+RETIRED = [
+    "Bash(*cat *.env*)",
+    "Bash(*bat *.env*)",
+    "Bash(*less *.env*)",
+    "Bash(*head *.env*)",
+    "Bash(*tail *.env*)",
+    "Bash(*grep *.env*)",
+    "Bash(*source *.env*)",
+    "Bash(*. *.env*)",
+]
+
 
 def _read():
     try:
@@ -508,6 +564,7 @@ def install():
     data = _read()
     perms = data.setdefault("permissions", {})
     deny = perms.setdefault("deny", [])
+    deny[:] = [r for r in deny if r not in RETIRED]
     added = [r for r in RULES if r not in deny]
     deny.extend(added)
     SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -521,7 +578,7 @@ def remove():
     data = _read()
     perms = data.get("permissions") or {}
     deny = perms.get("deny") or []
-    keep = [r for r in deny if r not in RULES]
+    keep = [r for r in deny if r not in RULES and r not in RETIRED]
     removed = len(deny) - len(keep)
     if removed:
         perms["deny"] = keep

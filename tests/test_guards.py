@@ -356,6 +356,33 @@ class Launcher(unittest.TestCase):
 
 
 class DenyList(unittest.TestCase):
+    def test_env_shell_rules_match_file_reads_not_prose(self):
+        # fnmatch stands in for Claude Code's pattern matcher
+        import fnmatch
+        rules = [r[len("Bash("):-1] for r in denylist.RULES if r.startswith("Bash(") and ".env" in r]
+
+        def hit(cmd):
+            return any(fnmatch.fnmatchcase(cmd, pat) for pat in rules)
+
+        for cmd in ("cat .env", "cat ./.env | head", "grep KEY .env", "head -n 3 .env.local", ". .env",
+                    "source .env && npm start", "less /srv/app/.env"):
+            self.assertTrue(hit(cmd), cmd)
+        for cmd in ("grep -rn process.env src/", 'grep -rn "process.env" src/', "grep -rn process.env.API_KEY src/",
+                    'git commit -m "Fix. Add .env to gitignore"', 'python3 -c "import os; print(os.environ)"',
+                    "grep -n permissions settings.json 2>/dev/null"):
+            self.assertFalse(hit(cmd), cmd)
+
+    def test_install_retires_the_wide_env_rules(self):
+        denylist.SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        denylist.SETTINGS_PATH.write_text(json.dumps({"permissions": {"deny": [denylist.RETIRED[0], "Read(./mine.txt)"]}}))
+        denylist.install()
+        deny = json.loads(denylist.SETTINGS_PATH.read_text())["permissions"]["deny"]
+        self.assertNotIn(denylist.RETIRED[0], deny)
+        self.assertIn("Read(./mine.txt)", deny)
+        self.assertTrue(all(r in deny for r in denylist.RULES))
+        denylist.remove()
+        self.assertEqual(json.loads(denylist.SETTINGS_PATH.read_text())["permissions"]["deny"], ["Read(./mine.txt)"])
+
     def test_remove_undoes_install_and_keeps_the_rest(self):
         denylist.SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
         denylist.SETTINGS_PATH.write_text('{"permissions": {"deny": ["Read(./mine.txt)"], "allow": ["Bash(ls)"]}, "theme": "dark"}')

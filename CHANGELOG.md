@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.30, 2026-09-26
+
+The shell rules for environment files in the known secret paths were too wide. A command with grep somewhere and .env anywhere later was refused, which hit a search for process.env and a commit message that names .env. They now require the file name as an argument, preceded by a space or a slash, and they cover .env.local and the like. Eight rules become 48, 500 in all. cguard denylist install and remove take the old eight out.
+
 ## 0.1.29, 2026-09-26
 
 A redirect elsewhere in a command, such as 2>/dev/null, no longer counts as a write to a protected file. Only a redirect or tee aimed at the file counts, next to the explicit write commands. A third eval case, commit-everything, for the commit gate: the first commit of a project with a secret in .env, where the secret must stay out of the commit.

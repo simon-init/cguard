@@ -1,7 +1,7 @@
 {
   "name": "cguard",
   "description": "Keeps secrets, other people's documents and destructive commands out of a Claude Code session. Every refusal comes with a way forward.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": { "name": "Simon Ertushi" },
   "homepage": "https://github.com/simon-init/cguard",
   "repository": "https://github.com/simon-init/cguard",

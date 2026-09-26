@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.32, 2026-09-26
+
+The commit-gate eval case is removed. Claude Code's eval sandbox masks the git binary as a credential path, so no run can make a commit, with or without the plugin, and a case that cannot pass says nothing. The commit gate keeps its unit tests.
+
 ## 0.1.31, 2026-09-26
 
 The shell rules for environment files in the known secret paths were too wide. A command with grep somewhere and .env anywhere later was refused, which hit a search for process.env and a commit message that names .env. They now require the file name as an argument, preceded by a space or a slash, and they cover .env.local and the like. Eight rules become 66, 518 in all. cguard denylist install and remove take the old eight out.

@@ -136,31 +136,36 @@ class Screen:
                 self.put(y, 11 + len(r["title"]), "  " + r["short"], self.pair(C_DIM))
 
     def body_lines(self, w):
+        """[(attr_name, text)] ready to draw, wrapped."""
         kind, value = self.items[self.cursor]
         width = min(TEXT_WIDTH, max(30, w - 6))
-        lines = []
         if kind == "about":
             text = config.ABOUT
         elif kind == "profile":
             title, desc = config.PROFILE_INFO[value]
             other = next(n for n in config.PROFILES if n != value)
-            text = desc
             diffs = config.profile_differences(value)
-            text += f"\n\nWhat differs from {other}:\n" + "\n".join(f"  {rid}: {mine} here, {theirs} on {other}" for rid, mine, theirs in diffs)
+            text = desc + f"\n\n## What differs from {other}\n" + "\n".join(f"- {rid}: {mine} here, {theirs} on {other}" for rid, mine, theirs in diffs)
             text += ("\n\nThis profile is active." if value == self.cfg["profile"]
                      else "\n\nPress Enter to select it. Every rule is then reset to this profile's defaults, and your allowlists are kept.")
         else:
             r = config.rule(value)
-            text = r["short"] + "\n\n" + r["long"]
-        for para in text.split("\n\n"):
-            if para.startswith("What differs") or para.startswith("  "):
-                lines.extend(para.split("\n"))
+            text = r["short"] + "\n\n" + r["long"] + f"\n\n## Change it\n- Here: Enter cycles the mode, d a o set it.\n- From any terminal: cguard set {value} <deny|ask|off>"
+        lines = []
+        for style, item in config.parse_markup(text):
+            if style == "blank":
+                if lines and lines[-1][1] != "":
+                    lines.append(("plain", ""))
+            elif style == "header":
+                if lines and lines[-1][1] != "":
+                    lines.append(("plain", ""))
+                lines.append(("header", item))
+            elif style == "bullet":
+                wrapped = textwrap.wrap(item, width=width - 4) or [""]
+                lines.append(("bullet", "• " + wrapped[0]))
+                lines.extend(("bullet", "  " + w2) for w2 in wrapped[1:])
             else:
-                lines.extend(textwrap.wrap(" ".join(para.split()), width=width) or [""])
-            lines.append("")
-        if kind == "rule":
-            lines.append("Modes: deny refuses, ask confirms with you first, off disables the rule.")
-            lines.append(f"From any terminal:  cguard set {value} <deny|ask|off>")
+                lines.extend(("plain", w2) for w2 in (textwrap.wrap(item, width=width) or [""]))
         return lines
 
     def draw_detail(self, h, w):
@@ -186,8 +191,13 @@ class Screen:
         body = self.body_lines(w)
         visible = h - top - 3
         self.scroll = max(0, min(self.scroll, max(0, len(body) - visible)))
-        for i, line in enumerate(body[self.scroll:self.scroll + visible]):
-            self.put(top + i, 3, line)
+        for i, (style, line) in enumerate(body[self.scroll:self.scroll + visible]):
+            if style == "header":
+                self.put(top + i, 3, line, self.pair(C_ACCENT, curses.A_BOLD))
+            elif style == "bullet":
+                self.put(top + i, 5, line)
+            else:
+                self.put(top + i, 3, line)
         if self.scroll + visible < len(body):
             self.put(h - 3, 3, "↓ more", self.pair(C_DIM))
         elif self.scroll > 0:

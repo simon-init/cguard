@@ -52,12 +52,24 @@ def cmd_rules(cfg):
         print(f"{cfg['rules'][r[0]]:<5} {r[0]:<22} {r[3]}")
 
 
+def render_markup(text, width=86):
+    out = []
+    for style, item in config.parse_markup(text):
+        if style == "blank":
+            out.append("")
+        elif style == "header":
+            out.append(item.upper())
+        elif style == "bullet":
+            out.append(textwrap.fill(item, width=width, initial_indent="  - ", subsequent_indent="    "))
+        else:
+            out.append(textwrap.fill(item, width=width))
+    return "\n".join(out)
+
+
 def cmd_explain(cfg, rule_id):
     r = config.rule(rule_id)
-    print(f"{r['id']}  ({r['group']})  mode: {cfg['rules'][r['id']]}\n{r['title']}\n")
-    for para in r["long"].split("\n\n"):
-        print(textwrap.fill(para, width=88))
-        print()
+    print(f"{r['id']}  ({r['group']})  mode: {cfg['rules'][r['id']]}\n{r['title']}\n{r['short']}\n")
+    print(render_markup(r["long"]))
 
 
 def cmd_audit(n):
@@ -121,7 +133,7 @@ def main(argv=None):
             for name, (title, text) in config.PROFILE_INFO.items():
                 mark = "*" if name == cfg["profile"] else " "
                 print(f"{mark} {name:<12} {title}")
-                print(textwrap.fill(text, width=86, initial_indent="    ", subsequent_indent="    "))
+                print("\n".join("    " + line for line in render_markup(text, width=82).splitlines()))
                 diffs = config.profile_differences(name)
                 print("    differs: " + ", ".join(f"{r}={m}" for r, m, _ in diffs))
                 print()

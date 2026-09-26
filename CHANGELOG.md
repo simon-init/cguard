@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.10, 2026-09-26
+
+Every description is structured: headers for how it works, why it exists, what it does not catch and the way forward, with bullets for lists. The settings screen and `cguard explain` render them.
+
 ## 0.1.9, 2026-09-26
 
 The boundary rule is described by scope: a session stays inside the project it was opened in.

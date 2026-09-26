@@ -137,9 +137,6 @@ the wrong folder. Those are most of the incidents that happen.
 python3 -m unittest discover -s tests -v
 ```
 
-## Credits
-
-The list of key formats grew out of the secret scanner in ShipSecure, by the same author.
-Everything else was written for this plugin.
+## License
 
 MIT.

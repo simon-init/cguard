@@ -33,8 +33,8 @@ it stays inside the project and asks before installing anything.
 
 Detection. Secrets are found by content, not by file name. The hook reads at most the
 first 4 KB of a file and looks for {FORMATS} known key formats, plus NAME=value lines where
-the name says secret and the value looks random. That list grew out of the secret scanner
-in ShipSecure. It covers the common cases and cannot cover every one: a secret past the
+the name says secret and the value looks random. That list covers the common cases and
+cannot cover every one: a secret past the
 first 4 KB, a format not on the list, or a secret that reads as ordinary words all pass.
 The deny list in Claude Code's settings, which blocks known file names, is the layer
 below this one, and a real sandbox is the layer below that.
@@ -51,8 +51,7 @@ RULES = [
      f"First, {FORMATS} known formats with a fixed shape: private key blocks, keys for AWS, Anthropic, "
      f"OpenAI, GitHub, GitLab, Hugging Face, Replicate, npm, Stripe, Square, SendGrid, Slack and "
      f"Langfuse, Google service account files, kubeconfig keys, connection strings and URLs that "
-     f"carry a password, bearer tokens and JSON web tokens. This list grew out of the secret scanner "
-     f"in ShipSecure.\n\n"
+     f"carry a password, bearer tokens and JSON web tokens.\n\n"
      f"Second, any line of the form NAME=value or NAME: value where NAME contains SECRET, TOKEN, "
      f"PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or CREDENTIAL, and the value is at least 12 "
      f"characters and looks random, measured as 3.0 bits of entropy or more. Placeholders such as "

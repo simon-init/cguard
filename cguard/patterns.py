@@ -75,9 +75,15 @@ for _rid, _desc, _rx, _ent, _grp in _IMPORTED:
 
 # KEY=value or KEY: value, where the name says secret and the value is long.
 GENERIC = re.compile(
-    r"(?im)^\s*(?:export\s+)?(?:[A-Za-z_][A-Za-z0-9_]*\.)?([A-Za-z_][A-Za-z0-9_]*"
+    r"(?im)^\s*(?:export\s+)?(?:[A-Za-z_][A-Za-z0-9_]*\.)?((?:[A-Za-z_][A-Za-z0-9_]*)?"
     r"(?:SECRET|TOKEN|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|ACCESS_KEY|CREDENTIAL)"
-    r"[A-Za-z0-9_]*)\s*[=:]\s*['\"]?([^\s'\"#,]{12,})"
+    r"[A-Za-z0-9_]*)\s*[=:]\s*['\"]?([A-Za-z0-9_\-+/=.@!%*~^?]{12,})(?=[\s'\"#,;]|$)"
+)
+# A value that is a name from code rather than a literal: snake_case, CONSTANT_CASE, camelCase,
+# or a dotted path such as self.token_cache.
+CODE_NAME = re.compile(
+    r"^(?:[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+|[a-z]+(?:[A-Z][a-z0-9]*)+"
+    r"|[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+)$"
 )
 
 SECRET_NAME = re.compile(r"(?i)(SECRET|TOKEN|PASSWORD|PASSWD|API_?KEY|PRIVATE_KEY|ACCESS_KEY|CREDENTIAL)")
@@ -122,7 +128,7 @@ def find_secret(text):
         return f"a {rid.replace('-', ' ')}"
     for m in GENERIC.finditer(text):
         value = m.group(2)
-        if is_placeholder(value):
+        if is_placeholder(value) or CODE_NAME.match(value):
             continue
         if entropy(value) >= 3.0:
             return f"credentials in {m.group(1)}=value form"

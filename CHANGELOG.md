@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.38, 2026-09-27
+
+The NAME=value detector now matches a name that is exactly the keyword: API_KEY=, TOKEN=, SECRET=, PASSWORD= and their lower-case forms. Before, it needed at least one character in front of the keyword, so DB_PASSWORD= was caught and API_KEY= was not, in files and in messages alike. The descriptions of the file rule and the message rule now say that a bare random string with no name and no known prefix is not caught.
+
 ## 0.1.37, 2026-09-27
 
 A new rule, secrets.prompt, on by default. When a message you send holds a key, the hook stops it before it reaches the model. Claude Code erases it, and you see one line that names the kind of key, says nothing left the machine, and says to rotate the key if it was pasted anywhere else. In ask mode the message goes through and Claude is told to say the key must be rotated. Eighteen rules.

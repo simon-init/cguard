@@ -73,6 +73,15 @@ class Patterns(unittest.TestCase):
 
     def test_generic_assignment_needs_entropy(self):
         self.assertIsNotNone(patterns.find_secret("DB_PASSWORD=Xk9mQ2vLp8zR4nW7tYb3"))
+        for line in ("API_KEY=Xk9mQ2vLp8zR4nW7tYb3Qc5", "api_key: Xk9mQ2vLp8zR4nW7tYb3Qc5", "TOKEN=Xk9mQ2vLp8zR4nW7tYb3Qc5",
+                     "export SECRET=Xk9mQ2vLp8zR4nW7tYb3Qc5", 'PASSWORD="Xk9mQ2vLp8zR4nW7tYb3Qc5"'):
+            self.assertIsNotNone(patterns.find_secret(line), line)
+        for line in ("API_KEY=your_api_key_here", "TOKEN=aaaaaaaaaaaaaaaaaaaa", "Xk9mQ2vLp8zR4nW7tYb3Qc5/+ab==",
+                     "token = os.path.expanduser(os.path.expandvars(token))", "token = self._token_cache",
+                     "api_key = api_key_from_config", "SECRET = SESSION_SECRET_VALUE", "accessToken = refreshAccessToken",
+                     "TOKEN_URL=https://portal.example.com/oauth2/token", 'password = os.environ["DB_PASSWORD"]'):
+            self.assertIsNone(patterns.find_secret(line), line)
+        self.assertIsNotNone(patterns.find_secret("DB_PASSWORD=p@ssw0rd!Long9x"))
         self.assertIsNone(patterns.find_secret("DB_PASSWORD=aaaaaaaaaaaaaaaaaaaa"))
 
     def test_redact_masks_values(self):

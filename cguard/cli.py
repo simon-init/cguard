@@ -20,7 +20,7 @@ USAGE = """cguard: guards for a Claude Code session
   cguard allow <list> <value>       add to an allowlist: paths, hosts, commit_paths, binary_extensions
   cguard remove <list> <value>      remove from an allowlist
   cguard profiles                          the two profiles and what differs between them
-  cguard profile <own-work|client-data>    switch profile (resets rule modes to that profile's defaults)
+  cguard profile <standard|contained>      switch profile (resets rule modes to that profile's defaults)
   cguard audit [n]                  the last n decisions (default 20)
   cguard why                        the most recent refusal, explained
   cguard check '<shell command>'    what the guard would do with a command, without running it

@@ -25,13 +25,14 @@ about to touch, and the file content never reaches the model. Only the decision 
 | `exfil.pipe_to_shell` | deny | Refuse `curl ... \| sh` and `wget ... \| bash` |
 | `exfil.upload` | ask | Confirm before curl uploads, scp, rsync, sftp or nc to a host that is not on the allowlist |
 | `self.protect` | deny | Refuse edits to the plugin, its configuration file, Claude Code's own configuration file and the credentials file |
-| `paths.boundary` | off | Confirm before touching a file outside the working directory. Ask on the client-data profile |
-| `packages.install` | off | Confirm before pip, npm, npx, cargo, brew, pacman and apt installs. Ask on the client-data profile |
+| `paths.boundary` | off | Confirm before touching a file outside the working directory. Ask on the contained profile |
+| `packages.install` | off | Confirm before pip, npm, npx, cargo, brew, pacman and apt installs. Ask on the contained profile |
 | `session.check` | off | If `.env` is not ignored, or a tracked file holds a secret, warn once per session |
 
-Two profiles. `own-work` is for a machine that holds only your own work. `client-data`
-is for a machine that also holds other people's data, and it turns on the boundary and
-the package guard. Every rule can be set to `deny`, `ask` or `off` on top of either profile.
+Two profiles. `standard` guards secrets, commits and the machine, and lets Claude move
+between folders and install without asking. `contained` adds containment: Claude stays
+inside the project, asks before touching anything outside it or installing anything, and
+the session check runs. Every rule can be set to `deny`, `ask` or `off` on top of either profile.
 
 ## The one rule behind all of them
 
@@ -74,7 +75,7 @@ cguard set commit.add_all ask      change one rule
 cguard allow hosts my-server.example.com
 cguard allow paths ~/other-project
 cguard allow commit_paths fixtures/sample.pdf
-cguard profile client-data            switch profile
+cguard profile contained              switch profile
 cguard audit                       the last decisions
 cguard why                         the last refusal, explained
 cguard check 'rm -rf build'        dry-run a command

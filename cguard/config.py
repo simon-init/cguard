@@ -27,10 +27,11 @@ reason, never the content the hook looked at.
 Every refusal has the same shape: what was blocked, why in one line, how to do it
 yourself, and how to allow it. Claude relays that to you. You are never left with a wall.
 
-Modes. Each rule is deny, ask or off. Deny and ask cost no tokens: a deny is one short
-message, an ask is a prompt drawn by Claude Code itself. Two profiles set the defaults:
-own-work, for a machine that holds only your own work, and client-data, for a machine
-with other people's data on it, which also turns on the boundary and the package guard.
+Modes. Each rule is deny, ask or off. A refusal costs about one short message: its reason
+enters the context and Claude relays it. An ask costs nothing until you answer. Nothing is
+added to the turns where the guard did not fire, which is what keeps it cheap. Two profiles
+set the defaults: standard, where Claude moves freely between folders, and contained, where
+it stays inside the project and asks before installing anything.
 
 Detection. Secrets are found by content, not by file name. The hook reads at most the
 first 4 KB of a file and looks for {FORMATS} known key formats, plus NAME=value lines where
@@ -208,8 +209,8 @@ RULES = [
      "folder, /tmp, or a folder on the allowlist.\n\n"
      "Why it exists. A session opened in one project has no business in your browser profile, "
      "another client's folder or your documents. On a machine that holds only your own work this "
-     "is more obstacle than protection, which is why the own-work profile leaves it off and the "
-     "client-data profile sets it to ask.\n\n"
+     "is more obstacle than protection, which is why the standard profile leaves it off and the "
+     "contained profile sets it to ask.\n\n"
      "Way forward given to Claude: open a Claude session in that folder instead, or allow the "
      "folder with:  cguard allow paths <folder>"),
     ("packages.install", "Boundary", "Installing packages",
@@ -219,7 +220,7 @@ RULES = [
      "apt and gem, and asks for confirmation with the command shown.\n\n"
      "Why it exists. Every install pulls code from the internet onto the machine, and an "
      "assistant can do it dozens of times an hour without anyone noticing what arrived. Off by "
-     "default on the own-work profile, ask on the client-data profile."),
+     "default on the standard profile, ask on the contained profile."),
 
     ("session.check", "Session", "Hygiene check at session start",
      "At session start, warn once if .env is not ignored or a tracked file looks like it holds a secret.",
@@ -236,20 +237,21 @@ for _r in RULES:
         GROUPS.append(_r[1])
 
 PROFILE_INFO = {
-    "own-work": ("This machine holds only your own work",
-                 "Everything that protects secrets, commits and the machine is on. The boundary guard and the "
-                 "package guard are off, because on a machine with nothing but your own projects they are more "
-                 "obstacle than protection."),
-    "client-data": ("This machine also holds other people's data",
-                    "Everything from own-work, plus: the boundary guard asks before Claude touches anything outside "
-                    "the project folder, the package guard asks before anything is installed, and the session check "
-                    "warns once when a repository is not keeping its secrets out of git. For a laptop with client "
-                    "folders, a shared workstation, or a server."),
+    "standard": ("Guards on, free to move between folders",
+                 "Secrets, commits and the machine are guarded. Claude can move between the folders on this "
+                 "machine and install packages without asking. Choose this when the folders here are all part "
+                 "of the work and you want the least friction."),
+    "contained": ("Guards on, and Claude stays inside the project",
+                  "Everything in standard, plus containment. Claude stays inside the project it was opened in "
+                  "and asks before touching anything outside it. It asks before installing anything. And the "
+                  "session check warns once when a repository is not keeping its secrets out of git. Choose "
+                  "this when the machine holds folders that are not part of the work, or when other people rely "
+                  "on you keeping things apart."),
 }
-OLD_PROFILE_NAMES = {"personal": "own-work", "shared": "client-data"}
+OLD_PROFILE_NAMES = {"personal": "standard", "own-work": "standard", "shared": "contained", "client-data": "contained"}
 
 PROFILES = {
-    "own-work": {
+    "standard": {
         "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny",
         "commit.secrets": "deny", "commit.binaries": "deny", "commit.add_all": "deny",
         "commit.no_verify": "deny", "commit.force_push": "ask",
@@ -259,7 +261,7 @@ PROFILES = {
         "paths.boundary": "off", "packages.install": "off",
         "session.check": "off",
     },
-    "client-data": {
+    "contained": {
         "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny",
         "commit.secrets": "deny", "commit.binaries": "deny", "commit.add_all": "deny",
         "commit.no_verify": "deny", "commit.force_push": "ask",
@@ -293,7 +295,7 @@ def rule(rule_id):
     raise KeyError(rule_id)
 
 
-def default_config(profile="own-work"):
+def default_config(profile="standard"):
     return {"profile": profile, "rules": dict(PROFILES[profile]), "lists": json.loads(json.dumps(DEFAULT_LISTS)),
             "audit": {"decisions": True, "commands": False}}
 
@@ -308,7 +310,7 @@ def load():
             user = {}
     profile = OLD_PROFILE_NAMES.get(user.get("profile"), user.get("profile"))
     if profile not in PROFILES:
-        profile = "own-work"
+        profile = "standard"
     cfg = default_config(profile)
     for rid, mode in (user.get("rules") or {}).items():
         if rid in cfg["rules"] and mode in MODES:

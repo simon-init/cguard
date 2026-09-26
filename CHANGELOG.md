@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.40, 2026-09-27
+
+The icon has three speed stripes behind the C, fading towards the tail, so the C reads as moving to the right. The drawing sits a little further right to keep the whole centred.
+
 ## 0.1.39, 2026-09-27
 
 The NAME=value detector finds a pair anywhere in a line, not only at its start: a token in a query string, a JSON field or a request header such as X-Api-Key, which is how secrets sit in pasted logs. The name may be quoted and may use hyphens. When a message is stopped, the guard names the line the secret is on. The icon is Simon's drawing on a square canvas with a soft green background.

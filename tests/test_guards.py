@@ -46,12 +46,29 @@ class Patterns(unittest.TestCase):
         self.assertIn("connection string", patterns.find_secret("DATABASE=postgres://app:Pa55word@db:5432/x"))
         self.assertEqual(patterns.find_secret(FAKE_KEY_BLOCK), "a private key")
 
+    def test_more_prefixed_formats(self):
+        cases = {
+            "AIza" + "SyD9k2mQ4vLp8zR7tYb3nWx1cVf5gHj6kLm": "a Google API key",
+            "dop_v1_" + "a" * 64: "a DigitalOcean token",
+            "tskey-" + "auth-k7Hq2mPz9vLc3-BnXw4rTy8sDf": "a Tailscale key",
+            "gsk_" + "Q3rZ7L2m9Xv4T8kBq3RZ7l2M9xV4t8KbQ3rZ7L2m": "a Groq API key",
+            "6987654321:AA" + "H9k2mQ4vLp8zR7tYb3nWx1cVf5gHj6kLmN": "a Telegram bot token",
+            "SK" + "0123456789abcdef0123456789abcdef": "a Twilio API key",
+            "0123456789abcdef0123456789abcdef-us21": "a Mailchimp API key",
+        }
+        for text, label in cases.items():
+            self.assertEqual(patterns.find_secret(text), label, text[:12])
+
     def test_placeholders_and_plain_text_pass(self):
         self.assertIsNone(patterns.find_secret("API_KEY=your_api_key_here"))
         self.assertIsNone(patterns.find_secret("PASSWORD=<fill in>"))
         self.assertIsNone(patterns.find_secret("SECRET_TOKEN=aaaaaaaaaaaaaaaa"))
         self.assertIsNone(patterns.find_secret("The tokenizer splits text. password rules apply."))
         self.assertIsNone(patterns.find_secret("export PATH=/usr/local/bin:$PATH"))
+        # ordinary hex, sizes and identifiers that sit near the new shapes must pass
+        self.assertIsNone(patterns.find_secret("commit 4f2c9e1a7b3d5e6f8a9b0c1d2e3f4a5b6c7d8e9f"))
+        self.assertIsNone(patterns.find_secret("SKU 12345 and SKIP the rest"))
+        self.assertIsNone(patterns.find_secret("md5 d41d8cd98f00b204e9800998ecf8427e of the file"))
 
     def test_generic_assignment_needs_entropy(self):
         self.assertIsNotNone(patterns.find_secret("DB_PASSWORD=Xk9mQ2vLp8zR4nW7tYb3"))

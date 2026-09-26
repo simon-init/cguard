@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7, 2026-09-26
+
+Twenty-one more key formats with a fixed prefix, 44 in all: Google, DigitalOcean, Tailscale, Doppler, PyPI, Shopify, Linear, Netlify, Fly, Postman, Groq, Perplexity, xAI, Docker Hub, Slack app, Telegram, Discord webhooks, Twilio, Mailchimp, Supabase.
+
 ## 0.1.6, 2026-09-26
 
 The descriptions name no other product.

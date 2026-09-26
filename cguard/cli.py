@@ -29,6 +29,7 @@ USAGE = """cguard: guards for a Claude Code session
   cguard denylist status            are the known secret paths in Claude Code's settings
   cguard denylist show              list the rules
   cguard denylist install           add the missing rules to the settings file, keep the rest
+  cguard denylist remove            take cguard's rules out again, keep the rest
   cguard setup                      the guided setup, once after install, safe to run again
   cguard config                     the interactive settings screen (needs a real terminal)
   cguard version
@@ -170,7 +171,7 @@ def main(argv=None):
             label = patterns.classify_file(os.path.abspath(os.path.expanduser(args[0])))
             print(f"{args[0]}: {label or 'no secret material found in the first 64 KB'}")
             return 1 if label else 0
-        elif cmd == "denylist" and args and args[0] in ("status", "show", "install"):
+        elif cmd == "denylist" and args and args[0] in ("status", "show", "install", "remove"):
             present, missing = denylist.status()
             if args[0] == "status":
                 print(f"{len(present)} of {len(denylist.RULES)} rules present in {denylist.SETTINGS_PATH}, {len(missing)} missing")
@@ -179,6 +180,9 @@ def main(argv=None):
                 for r in denylist.RULES:
                     print(("  " if r in present else "+ ") + r)
                 print("\n'+' marks a rule that is not installed yet")
+            elif args[0] == "remove":
+                removed = denylist.remove()
+                print(f"removed {removed} rules from {denylist.SETTINGS_PATH}. Restart Claude Code to apply it.")
             else:
                 added = denylist.install()
                 print(f"added {added} rules to {denylist.SETTINGS_PATH}; {len(denylist.RULES)} present now. Restart Claude Code to load them.")

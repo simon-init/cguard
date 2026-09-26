@@ -173,6 +173,14 @@ class BashCommands(unittest.TestCase):
                     "aws s3 ls s3://bucket", "prisma migrate dev", "helm list"):
             self.assertIsNone(self.bash(cmd), cmd)
 
+    def test_denylist_install_and_remove_are_the_users(self):
+        for cmd in ("cguard denylist remove", "cguard denylist install", "python3 -m cguard.cli denylist remove"):
+            d = self.bash(cmd)
+            self.assertIsNotNone(d, cmd)
+            self.assertEqual((d.rule, d.mode), ("self.protect", "deny"), cmd)
+        for cmd in ("cguard denylist status", "cguard denylist show", "grep -n 'cguard denylist install' README.md"):
+            self.assertIsNone(self.bash(cmd), cmd)
+
     def test_sudo_asks(self):
         d = self.bash("sudo systemctl restart nginx")
         self.assertEqual((d.rule, d.mode), ("commands.sudo", "ask"))
@@ -328,6 +336,17 @@ class FirstRun(unittest.TestCase):
 
 
 class DenyList(unittest.TestCase):
+    def test_remove_undoes_install_and_keeps_the_rest(self):
+        denylist.SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        denylist.SETTINGS_PATH.write_text('{"permissions": {"deny": ["Read(./mine.txt)"], "allow": ["Bash(ls)"]}, "theme": "dark"}')
+        self.assertEqual(denylist.install(), len(denylist.RULES))
+        self.assertEqual(denylist.remove(), len(denylist.RULES))
+        data = json.loads(denylist.SETTINGS_PATH.read_text())
+        self.assertEqual(data["permissions"]["deny"], ["Read(./mine.txt)"])
+        self.assertEqual(data["permissions"]["allow"], ["Bash(ls)"])
+        self.assertEqual(data["theme"], "dark")
+        self.assertEqual(denylist.remove(), 0)
+
     def test_install_adds_only_missing_and_keeps_the_rest(self):
         path = Path(os.environ["CGUARD_SETTINGS"])
         path.write_text(json.dumps({"theme": "dark", "permissions": {"deny": [denylist.RULES[0], "Bash(my-own-rule)"]}}))

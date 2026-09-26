@@ -92,7 +92,10 @@ The secrets rule looks inside a file and needs to recognise what it finds. This 
 ## Commands
 - cguard denylist status
 - cguard denylist show
-- cguard denylist install"""
+- cguard denylist install
+- cguard denylist remove, the undo
+
+You run install and remove in a terminal. Claude cannot run them, which is the self-protect rule."""
 
 PROFILE_INFO = {
     "standard": ("Guards on, free to move between folders",

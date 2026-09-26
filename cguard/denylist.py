@@ -515,6 +515,21 @@ def install():
     return len(added)
 
 
+def remove():
+    """Take cguard's rules out of the settings file. Everything else in the file is kept.
+    Returns the number of rules removed."""
+    data = _read()
+    perms = data.get("permissions") or {}
+    deny = perms.get("deny") or []
+    keep = [r for r in deny if r not in RULES]
+    removed = len(deny) - len(keep)
+    if removed:
+        perms["deny"] = keep
+        data["permissions"] = perms
+        SETTINGS_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return removed
+
+
 def state():
     """on, partial or off."""
     present, missing = status()

@@ -338,6 +338,15 @@ def check_bash(command, cwd, cfg):
                 if d:
                     return d
 
+    # The known secret paths live in Claude Code's own settings file. The user changes them in a terminal.
+    for seg in segments:
+        if len(seg) >= 3 and "denylist" in seg and seg[-1] in ("install", "remove") and (seg[0].endswith("cguard") or "cguard.cli" in seg):
+            d = _dec(cfg, "self.protect", f"`cguard denylist {seg[-1]}`, which changes Claude Code's own settings file.",
+                     "the known secret paths are changed by you in a terminal, never from inside a session, by any route.",
+                     f"run `cguard denylist {seg[-1]}` in a terminal, or `cguard setup` for the guided version.")
+            if d:
+                return d
+
     # Commands that destroy a machine
     for seg in segments:
         if seg and seg[0] == "rm" or (len(seg) > 1 and seg[0] == "sudo" and "rm" in seg[:3]):

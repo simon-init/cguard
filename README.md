@@ -46,11 +46,14 @@ whose job is to print a secret. The Windows paths are best effort and untested.
 ```
 cguard denylist status
 cguard denylist install
+cguard denylist remove
 ```
 
-The same row exists in the configuration screen, under Files by name. The command and the
-screen are run by you. Claude cannot edit `settings.json`, which is the guard's own rule,
-so the plugin cannot install the rules on its own. The list is grouped in
+Remove is the undo. It takes cguard's rules out and keeps the rest of the file. The same
+row exists in the configuration screen, under Files by name, and in `cguard setup`. The
+commands and the screens are run by you. Claude cannot edit `settings.json`, and cannot
+run install or remove from a shell either, which is the guard's own rule. So the plugin
+cannot change the rules on its own. The list is grouped in
 `cguard/denylist.py` with one comment per group, so the source is the documentation.
 
 Two profiles. `standard` guards secrets, commits and the machine, and lets Claude move

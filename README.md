@@ -97,10 +97,13 @@ Once after install, in a terminal:
 cguard setup
 ```
 
-Five short steps: the profile, the known secret paths, the hosts you trust, the five
-commands worth knowing, and a summary of what was written where. Enter keeps the value
-shown. It is safe to run again. Until the configuration file exists, a session starting
-with the plugin installed gets one line asking Claude to point you at setup.
+A screen with five steps: the profile, the known secret paths, the computers you trust,
+the commands worth knowing, and a summary. Up and down move between the answers, and
+Enter picks one. Every step waits for you, and the left arrow goes back. Nothing is
+written until the last step, except the known secret paths, which are written when you
+choose to add them. It is safe to run again. Until the configuration file exists, a
+session that starts with the plugin installed gets one line asking Claude to point you
+at setup.
 
 ## Where the key formats come from
 

@@ -61,6 +61,49 @@ def _footer_rows(keys, width):
     return rows[:2]
 
 
+def show_cursor(visible):
+    """Hide or show the cursor. Some terminals cannot, and curses then raises; that is fine."""
+    try:
+        curses.curs_set(1 if visible else 0)
+    except curses.error:
+        pass
+
+
+def init_colors():
+    """Set up the colour pairs shared by the screens. Returns False on a mono terminal."""
+    if not curses.has_colors():
+        return False
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(C_ACCENT, curses.COLOR_CYAN, -1)
+    curses.init_pair(C_DENY, curses.COLOR_RED, -1)
+    curses.init_pair(C_ASK, curses.COLOR_YELLOW, -1)
+    curses.init_pair(C_OFF, curses.COLOR_GREEN, -1)
+    curses.init_pair(C_DIM, curses.COLOR_WHITE, -1)
+    curses.init_pair(C_SEL, curses.COLOR_BLACK, curses.COLOR_CYAN)
+    return True
+
+
+def wrap_markup(text, width):
+    """[(style, line)] ready to draw: headers, bullets and paragraphs wrapped to width."""
+    lines = []
+    for style, item in config.parse_markup(text):
+        if style == "blank":
+            if lines and lines[-1][1] != "":
+                lines.append(("plain", ""))
+        elif style == "header":
+            if lines and lines[-1][1] != "":
+                lines.append(("plain", ""))
+            lines.append(("header", item))
+        elif style == "bullet":
+            wrapped = textwrap.wrap(item, width=max(10, width - 4), break_on_hyphens=False) or [""]
+            lines.append(("bullet", "• " + wrapped[0]))
+            lines.extend(("bullet", "  " + w2) for w2 in wrapped[1:])
+        else:
+            lines.extend(("plain", w2) for w2 in (textwrap.wrap(item, width=width, break_on_hyphens=False) or [""]))
+    return lines
+
+
 class Screen:
     def __init__(self, stdscr):
         self.scr = stdscr
@@ -71,17 +114,8 @@ class Screen:
         self.scroll = 0
         self.dirty = False
         self.message = "welcome. every refusal comes with a way forward."
-        curses.curs_set(0)
-        self.colors = curses.has_colors()
-        if self.colors:
-            curses.start_color()
-            curses.use_default_colors()
-            curses.init_pair(C_ACCENT, curses.COLOR_CYAN, -1)
-            curses.init_pair(C_DENY, curses.COLOR_RED, -1)
-            curses.init_pair(C_ASK, curses.COLOR_YELLOW, -1)
-            curses.init_pair(C_OFF, curses.COLOR_GREEN, -1)
-            curses.init_pair(C_DIM, curses.COLOR_WHITE, -1)
-            curses.init_pair(C_SEL, curses.COLOR_BLACK, curses.COLOR_CYAN)
+        show_cursor(False)
+        self.colors = init_colors()
 
     def pair(self, n, extra=0):
         return (curses.color_pair(n) if self.colors else 0) | extra
@@ -190,22 +224,7 @@ class Screen:
         else:
             r = config.rule(value)
             text = r["short"] + "\n\n" + r["long"] + f"\n\n## Change it\n- Here: Enter cycles the mode. d sets deny, a sets ask, o sets off.\n- From any terminal: cguard set {value} <deny|ask|off>"
-        lines = []
-        for style, item in config.parse_markup(text):
-            if style == "blank":
-                if lines and lines[-1][1] != "":
-                    lines.append(("plain", ""))
-            elif style == "header":
-                if lines and lines[-1][1] != "":
-                    lines.append(("plain", ""))
-                lines.append(("header", item))
-            elif style == "bullet":
-                wrapped = textwrap.wrap(item, width=max(10, width - 4)) or [""]
-                lines.append(("bullet", "• " + wrapped[0]))
-                lines.extend(("bullet", "  " + w2) for w2 in wrapped[1:])
-            else:
-                lines.extend(("plain", w2) for w2 in (textwrap.wrap(item, width=width) or [""]))
-        return lines
+        return wrap_markup(text, width)
 
     def draw_detail(self, h, w, bottom):
         kind, value = self.items[self.cursor]

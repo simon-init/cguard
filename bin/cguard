@@ -1,3 +1,12 @@
 #!/usr/bin/env bash
-# Command line for the cguard plugin. Works from any folder once this file is on PATH.
-exec python3 "$(dirname "$(readlink -f "$0")")/../cguard/cli.py" "$@"
+# Command line for the cguard plugin. Works from any folder once this file, or a symlink
+# to it, is on PATH. Linux and macOS. Windows uses cguard.cmd next to it.
+here="$0"
+while [ -L "$here" ]; do
+  dir="$(cd -P "$(dirname "$here")" && pwd)"
+  here="$(readlink "$here")"
+  case "$here" in /*) ;; *) here="$dir/$here" ;; esac
+done
+dir="$(cd -P "$(dirname "$here")" && pwd)"
+if command -v python3 >/dev/null 2>&1; then py=python3; else py=python; fi
+exec "$py" "$dir/../cguard/cli.py" "$@"

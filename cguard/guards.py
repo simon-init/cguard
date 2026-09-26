@@ -323,6 +323,27 @@ def check_bash(command, cwd, cfg):
     if not command.strip():
         return None
     segments = _segments(command)
+
+    # Commands that destroy a machine
+    for seg in segments:
+        if seg and seg[0] == "rm" or (len(seg) > 1 and seg[0] == "sudo" and "rm" in seg[:3]):
+            flags = "".join(t.lstrip("-") for t in seg if t.startswith("-") and not t.startswith("--"))
+            recursive = "r" in flags or "R" in flags or "--recursive" in seg
+            force = "f" in flags or "--force" in seg
+            targets = [t for t in seg[1:] if not t.startswith("-") and t not in ("sudo",)]
+            if recursive and any(t in FATAL_TARGETS or os.path.expanduser(t) in (os.path.expanduser("~"), "/") for t in targets):
+                d = _dec(cfg, "commands.fatal", f"`{' '.join(seg)}` deletes everything under {', '.join(targets)}.",
+                         "this cannot be undone and has no place inside an assistant session.",
+                         "if you really mean it, type it yourself in a terminal you are looking at.", "")
+                if d:
+                    return d
+    for pattern, why in FATAL_RE:
+        if pattern.search(command):
+            d = _dec(cfg, "commands.fatal", f"`{command.strip()[:120]}`", why + ", and it cannot be undone.",
+                     "if you really mean it, type it yourself in a terminal you are looking at.", "")
+            if d:
+                return d
+
     all_tokens = [t for seg in segments for t in seg]
 
     # The guard itself
@@ -344,26 +365,6 @@ def check_bash(command, cwd, cfg):
             d = _dec(cfg, "self.protect", f"`cguard denylist {seg[-1]}`, which changes Claude Code's own settings file.",
                      "the known secret paths are changed by you in a terminal, never from inside a session, by any route.",
                      f"run `cguard denylist {seg[-1]}` in a terminal, or `cguard setup` for the guided version.")
-            if d:
-                return d
-
-    # Commands that destroy a machine
-    for seg in segments:
-        if seg and seg[0] == "rm" or (len(seg) > 1 and seg[0] == "sudo" and "rm" in seg[:3]):
-            flags = "".join(t.lstrip("-") for t in seg if t.startswith("-") and not t.startswith("--"))
-            recursive = "r" in flags or "R" in flags or "--recursive" in seg
-            force = "f" in flags or "--force" in seg
-            targets = [t for t in seg[1:] if not t.startswith("-") and t not in ("sudo",)]
-            if recursive and any(t in FATAL_TARGETS or os.path.expanduser(t) in (os.path.expanduser("~"), "/") for t in targets):
-                d = _dec(cfg, "commands.fatal", f"`{' '.join(seg)}` deletes everything under {', '.join(targets)}.",
-                         "this cannot be undone and has no place inside an assistant session.",
-                         "if you really mean it, type it yourself in a terminal you are looking at.", "")
-                if d:
-                    return d
-    for pattern, why in FATAL_RE:
-        if pattern.search(command):
-            d = _dec(cfg, "commands.fatal", f"`{command.strip()[:120]}`", why + ", and it cannot be undone.",
-                     "if you really mean it, type it yourself in a terminal you are looking at.", "")
             if d:
                 return d
 

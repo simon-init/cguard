@@ -84,13 +84,24 @@ claude plugin marketplace add simon-init/cguard
 claude plugin install cguard@cguard
 ```
 
-Then put the command line on your path, once:
+Then put the command line on your path, once. On Linux and macOS:
 
 ```
 ln -s ~/.claude/plugins/marketplaces/cguard/bin/cguard ~/.local/bin/cguard
 ```
 
-It needs Python 3.11 or later and git. Nothing else is installed.
+On Windows, add this folder to your PATH. The launcher in it is `cguard.cmd`:
+
+```
+%USERPROFILE%\.claude\plugins\marketplaces\cguard\bin
+```
+
+The hook needs Python 3.9 or later and git. Nothing else is installed. The two screens,
+`cguard config` and `cguard setup`, need the curses module. Linux and macOS have it.
+Windows Python gets it with `pip install windows-curses`, and every other command works
+without it. On Windows, Claude Code runs hooks in Git Bash when Git for Windows is
+installed, and the hook needs that. The Windows side follows the documentation and is not
+yet tested on a Windows machine. A report is welcome.
 
 ## Setup
 

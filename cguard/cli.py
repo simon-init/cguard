@@ -186,11 +186,16 @@ def main(argv=None):
             else:
                 added = denylist.install()
                 print(f"added {added} rules to {denylist.SETTINGS_PATH}; {len(denylist.RULES)} present now. Restart Claude Code to load them.")
-        elif cmd == "setup":
-            from cguard import setup
-            return setup.run()
-        elif cmd == "config":
-            from cguard import tui
+        elif cmd in ("setup", "config"):
+            try:
+                from cguard import setup, tui
+            except ImportError as exc:
+                print(f"The screens need the curses module, and this Python has none ({exc}).")
+                print("On Windows: pip install windows-curses. Every other command works without it:")
+                print("cguard show, cguard set, cguard allow, cguard denylist install.")
+                return 2
+            if cmd == "setup":
+                return setup.run()
             tui.run()
         elif cmd == "version":
             print(__version__)

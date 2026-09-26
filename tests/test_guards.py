@@ -335,6 +335,18 @@ class FirstRun(unittest.TestCase):
         self.assertIn("cguard setup", out.stdout)
 
 
+class Launcher(unittest.TestCase):
+    def test_bash_launcher_works_through_a_symlink(self):
+        import cguard
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        link = os.path.join(TMP, "bin-link", "cguard")
+        os.makedirs(os.path.dirname(link), exist_ok=True)
+        if not os.path.lexists(link):
+            os.symlink(os.path.join(root, "bin", "cguard"), link)
+        out = subprocess.run([link, "version"], capture_output=True, text=True)
+        self.assertEqual(out.stdout.strip(), cguard.__version__, out.stderr)
+
+
 class DenyList(unittest.TestCase):
     def test_remove_undoes_install_and_keeps_the_rest(self):
         denylist.SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)

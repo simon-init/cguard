@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.43, 2026-09-27
+
+The message block is stated in both places the hook documentation describes, at the top level of the JSON and inside hookSpecificOutput, so it holds whichever form Claude Code reads.
+
 ## 0.1.42, 2026-09-27
 
 The message block did not block. The hook signalled it with exit code 2, and the manifest runs `python3 ... || python ...` for Windows, so the non-zero exit started the fallback, which found no input and exited 0, and Claude Code let the message through. The block now travels as a JSON decision on standard output with exit 0, the same way the permission decisions do. Found by pasting a test line after a restart.

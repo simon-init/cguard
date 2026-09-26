@@ -41,8 +41,9 @@ def prompt_check(data, cfg, cwd):
         # As JSON with exit 0, not as exit code 2: the manifest runs `python3 ... || python ...`
         # for Windows, and a non-zero exit from the first would start the fallback and turn
         # the block into a pass.
-        print(json.dumps({"decision": "block", "reason": BLOCKED.format(label=label, where=where),
-                          "hookSpecificOutput": {"hookEventName": "UserPromptSubmit"}}))
+        reason = BLOCKED.format(label=label, where=where)
+        print(json.dumps({"decision": "block", "reason": reason,
+                          "hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "decision": "block", "reason": reason}}))
         return
     print(EXPOSED.format(label=label))
 

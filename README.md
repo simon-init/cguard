@@ -37,7 +37,7 @@ mode. With permission prompts switched off, the dialog still appears.
 ## Known secret paths
 
 The hook finds secrets by content. Claude Code's own configuration can also refuse files
-by name, before any hook runs. cguard carries 500 such rules for Linux, macOS and Windows
+by name, before any hook runs. cguard carries 518 such rules for Linux, macOS and Windows
 and installs them into `~/.claude/settings.json` on request, adding only what is missing.
 They cover SSH keys, environment files, cloud and password-manager credentials, developer
 tool tokens, shell history, browser profiles and keychains. They also cover the commands

@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.1.30, 2026-09-26
+## 0.1.31, 2026-09-26
 
-The shell rules for environment files in the known secret paths were too wide. A command with grep somewhere and .env anywhere later was refused, which hit a search for process.env and a commit message that names .env. They now require the file name as an argument, preceded by a space or a slash, and they cover .env.local and the like. Eight rules become 48, 500 in all. cguard denylist install and remove take the old eight out.
+The shell rules for environment files in the known secret paths were too wide. A command with grep somewhere and .env anywhere later was refused, which hit a search for process.env and a commit message that names .env. They now require the file name as an argument, preceded by a space or a slash, and they cover .env.local and the like. Eight rules become 66, 518 in all. cguard denylist install and remove take the old eight out.
 
 ## 0.1.29, 2026-09-26
 

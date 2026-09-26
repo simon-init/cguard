@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.17, 2026-09-26
+
+The screen adapts to the terminal width: every row leads with its name in bold, descriptions are cut with an ellipsis, the footer wraps onto two rows, and the header drops its tagline when narrow.
+
 ## 0.1.16, 2026-09-26
 
 Arrow glyphs beside the words in the footer.

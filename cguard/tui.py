@@ -105,7 +105,7 @@ class Screen:
         self.scr.refresh()
 
     def draw_list(self, h, w):
-        top, visible = 2, h - 5
+        top, visible = 2, h - 6
         first = max(0, min(self.cursor - visible // 2, len(self.items) - visible))
         for row, idx in enumerate(range(first, min(len(self.items), first + visible))):
             kind, value = self.items[idx]
@@ -188,8 +188,8 @@ class Screen:
             self.put(3, 3 + len(meta), mode, self.mode_attr(mode))
             self.put(4, 3, "─" * min(TEXT_WIDTH, w - 6), self.pair(C_DIM))
             top = 5
-        body = self.body_lines(w)
-        visible = h - top - 3
+        body = self.body_lines(w) + [("plain", "")] * 3   # room below the last line
+        visible = h - top - 4
         self.scroll = max(0, min(self.scroll, max(0, len(body) - visible)))
         for i, (style, line) in enumerate(body[self.scroll:self.scroll + visible]):
             if style == "header":
@@ -202,6 +202,8 @@ class Screen:
             self.put(h - 3, 3, "↓ more", self.pair(C_DIM))
         elif self.scroll > 0:
             self.put(h - 3, 3, "↑ back to the top", self.pair(C_DIM))
+        # the list view keeps a free row above the status line as well
+
 
     # ------------------------------------------------------------------ actions
     def move(self, delta):

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.14, 2026-09-26
+
+The footer pairs each key with its meaning.
+
 ## 0.1.13, 2026-09-26
 
 `cguard why n` explains the n-th most recent refusal, `cguard why list` numbers the last twenty.

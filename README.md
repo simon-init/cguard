@@ -95,7 +95,7 @@ cguard config
 The keys on that screen:
 
 - Up and down move between rules.
-- Enter or space cycles a rule's mode. `d`, `a` and `o` set deny, ask or off directly.
+- Enter or space cycles a rule's mode. `d` sets deny, `a` sets ask, `o` sets off.
 - The right arrow opens the full description, with how the rule works and what it does
   not catch. Up and down scroll it.
 - The left arrow returns to the list.

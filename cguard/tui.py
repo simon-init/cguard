@@ -10,9 +10,9 @@ import textwrap
 from . import __version__, config
 
 TEXT_WIDTH = 76
-HELP_LIST = [("↑↓", "move"), ("enter/space", "cycle mode / select profile"), ("d a o", "deny ask off"),
+HELP_LIST = [("↑↓", "move"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
              ("→", "details"), ("s", "save"), ("q", "quit")]
-HELP_DETAIL = [("↑↓", "scroll"), ("enter/space", "cycle mode / select profile"), ("d a o", "deny ask off"),
+HELP_DETAIL = [("↑↓", "scroll"), ("enter", "cycle / select"), ("d", "deny"), ("a", "ask"), ("o", "off"),
                ("←", "back"), ("s", "save"), ("q", "quit")]
 
 C_ACCENT, C_DENY, C_ASK, C_OFF, C_DIM, C_SEL = 1, 2, 3, 4, 5, 6
@@ -150,7 +150,7 @@ class Screen:
                      else "\n\nPress Enter to select it. Every rule is then reset to this profile's defaults, and your allowlists are kept.")
         else:
             r = config.rule(value)
-            text = r["short"] + "\n\n" + r["long"] + f"\n\n## Change it\n- Here: Enter cycles the mode, d a o set it.\n- From any terminal: cguard set {value} <deny|ask|off>"
+            text = r["short"] + "\n\n" + r["long"] + f"\n\n## Change it\n- Here: Enter cycles the mode. d sets deny, a sets ask, o sets off.\n- From any terminal: cguard set {value} <deny|ask|off>"
         lines = []
         for style, item in config.parse_markup(text):
             if style == "blank":

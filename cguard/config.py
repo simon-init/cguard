@@ -204,10 +204,10 @@ RULES = [
      "command it checks every argument that names an existing file or folder. A path outside the "
      "working directory asks for confirmation, unless it is under the Claude configuration "
      "folder, /tmp, or a folder on the allowlist.\n\n"
-     "Why it exists. A session opened in one project has no business in your browser profile, "
-     "another client's folder or your documents. On a machine that holds only your own work this "
-     "is more obstacle than protection, which is why the standard profile leaves it off and the "
-     "contained profile sets it to ask.\n\n"
+     "Why it exists. A session opened in one project has no business in the rest of the machine: "
+     "a browser profile, a different project, a folder of documents. When every folder on the "
+     "machine is part of the work this is more obstacle than protection, which is why the "
+     "standard profile leaves it off and the contained profile sets it to ask.\n\n"
      "Way forward given to Claude: open a Claude session in that folder instead, or allow the "
      "folder with:  cguard allow paths <folder>"),
     ("packages.install", "Boundary", "Installing packages",

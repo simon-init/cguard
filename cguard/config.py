@@ -27,9 +27,7 @@ reason, never the content the hook looked at.
 Every refusal has the same shape: what was blocked, why in one line, how to do it
 yourself, and how to allow it. Claude relays that to you. You are never left with a wall.
 
-Modes. Each rule is deny, ask or off. A refusal costs about one short message: its reason
-enters the context and Claude relays it. An ask costs nothing until you answer. Nothing is
-added to the turns where the guard did not fire, which is what keeps it cheap. Two profiles
+Modes. Each rule is deny, ask or off. A deny refuses the call, and Claude relays the reason to you. An ask opens Claude Code's own permission dialog, the one with Yes, No and "tell Claude what to do differently", with cguard's reason shown in it, so you choose with the arrow keys and Enter. That dialog appears even when you run with permission prompts switched off, because the hook runs regardless of that setting. A refusal costs about one short message. An ask costs nothing until you answer. Nothing is added to the turns where the guard did not fire, which is what keeps it cheap. Two profiles
 set the defaults: standard, where Claude moves freely between folders, and contained, where
 it stays inside the project and asks before installing anything.
 

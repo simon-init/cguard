@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5, 2026-09-26
+
+The About text and the README say what an ask does: it opens Claude Code's permission dialog, even with permission prompts switched off.
+
 ## 0.1.4, 2026-09-26
 
 An empty row between the sections of the settings screen.

@@ -29,6 +29,10 @@ about to touch, and the file content never reaches the model. Only the decision 
 | `packages.install` | off | Confirm before pip, npm, npx, cargo, brew, pacman and apt installs. Ask on the contained profile |
 | `session.check` | off | If `.env` is not ignored, or a tracked file holds a secret, warn once per session |
 
+An `ask` opens Claude Code's own permission dialog, Yes, No and "tell Claude what to do
+differently", with the reason shown in it. It appears even when you run with permission
+prompts switched off, because a hook's answer is honoured regardless of that setting.
+
 Two profiles. `standard` guards secrets, commits and the machine, and lets Claude move
 between folders and install without asking. `contained` adds containment: Claude stays
 inside the project, asks before touching anything outside it or installing anything, and

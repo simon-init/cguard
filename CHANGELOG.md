@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.13, 2026-09-26
+
+`cguard why n` explains the n-th most recent refusal, `cguard why list` numbers the last twenty.
+
 ## 0.1.12, 2026-09-26
 
 The hook reads the first 64 KB of a file instead of 4 KB, the whole file in almost every case, with a 4 MB budget per tool call. The About text says where the configuration and the log are and how to read them.

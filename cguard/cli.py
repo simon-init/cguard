@@ -22,7 +22,8 @@ USAGE = """cguard: guards for a Claude Code session
   cguard profiles                          the two profiles and what differs between them
   cguard profile <standard|contained>      switch profile (resets rule modes to that profile's defaults)
   cguard audit [n]                  the last n decisions (default 20)
-  cguard why                        the most recent refusal, explained
+  cguard why [n]                    the most recent refusal explained, or the n-th most recent
+  cguard why list                   the last twenty refusals, numbered
   cguard check '<shell command>'    what the guard would do with a command, without running it
   cguard check-file <path>          whether a file counts as secret material
   cguard config                     the interactive settings screen (needs a real terminal)
@@ -86,14 +87,26 @@ def cmd_audit(n):
             print(f"{e['ts']}  {e.get('kind')}  {e.get('error', '')[:100]}")
 
 
-def cmd_why():
-    for e in reversed(audit.tail(200)):
-        if e.get("kind") == "decision":
-            print(f"{e['ts']}: {e['mode']} by {e['rule']}\n  {e.get('what', '')}\n  in {e.get('cwd', '')}")
-            print()
-            cmd_explain(config.load(), e["rule"])
-            return
-    print("no refusal recorded yet")
+def cmd_why(which="1"):
+    decisions = [e for e in reversed(audit.tail(500)) if e.get("kind") == "decision"]
+    if not decisions:
+        print("no refusal recorded yet")
+        return
+    if which == "list":
+        for i, e in enumerate(decisions[:20], 1):
+            print(f"{i:>2}  {e['ts']}  {e['mode']:<5} {e['rule']:<22} {e.get('what', '')[:80]}")
+        print("\ncguard why <number> for the full explanation of one of them")
+        return
+    try:
+        n = int(which)
+    except ValueError:
+        raise ValueError("why takes a number, 1 for the most recent, or the word list")
+    if n < 1 or n > len(decisions):
+        raise ValueError(f"only {len(decisions)} decisions are recorded")
+    e = decisions[n - 1]
+    print(f"{n} of {len(decisions)}, {e['ts']}: {e['mode']} by {e['rule']}\n  {e.get('what', '')}\n  in {e.get('cwd', '')}")
+    print()
+    cmd_explain(config.load(), e["rule"])
 
 
 def cmd_check(cfg, command):
@@ -146,7 +159,7 @@ def main(argv=None):
         elif cmd == "audit":
             cmd_audit(int(args[0]) if args else 20)
         elif cmd == "why":
-            cmd_why()
+            cmd_why(args[0] if args else "1")
         elif cmd == "check" and args:
             return cmd_check(cfg, " ".join(args))
         elif cmd == "check-file" and len(args) == 1:

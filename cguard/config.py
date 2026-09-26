@@ -64,7 +64,7 @@ The deny list in Claude Code's own configuration, which blocks known file names,
 
 ## Reading the log
 - cguard audit, the last 20 decisions. cguard audit 100 for more.
-- cguard why, the most recent refusal with its full explanation.
+- cguard why, the most recent refusal with its full explanation. cguard why 3 for the third most recent, cguard why list to pick from the last twenty.
 - cguard show, the current profile, rule modes and allowlists.
 - Inside a session: /cguard:audit, /cguard:why, /cguard:config."""
 

@@ -82,6 +82,7 @@ cguard allow commit_paths fixtures/sample.pdf
 cguard profile contained              switch profile
 cguard audit                       the last decisions
 cguard why                         the last refusal, explained
+cguard why list                    the last twenty refusals, numbered; cguard why 3 explains one
 cguard check 'rm -rf build'        dry-run a command
 ```
 

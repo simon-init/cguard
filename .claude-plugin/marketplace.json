@@ -1,9 +1,9 @@
 {
-  "name": "secret-guard",
+  "name": "cguard",
   "owner": { "name": "Simon Ertushi" },
   "plugins": [
     {
-      "name": "secret-guard",
+      "name": "cguard",
       "source": "./",
       "description": "Keeps secrets, other people's documents and destructive commands out of a Claude Code session. Every refusal comes with a way forward.",
       "version": "0.1.0"

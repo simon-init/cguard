@@ -13,12 +13,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-TMP = tempfile.mkdtemp(prefix="secret-guard-test-")
-os.environ["SECRET_GUARD_CONFIG"] = os.path.join(TMP, "config.json")
-os.environ["SECRET_GUARD_AUDIT"] = os.path.join(TMP, "audit.log")
+TMP = tempfile.mkdtemp(prefix="cguard-test-")
+os.environ["CGUARD_CONFIG"] = os.path.join(TMP, "config.json")
+os.environ["CGUARD_AUDIT"] = os.path.join(TMP, "audit.log")
 os.environ["CLAUDE_PLUGIN_ROOT"] = str(ROOT)
 
-from secret_guard import config, guards, hook, patterns  # noqa: E402
+from cguard import config, guards, hook, patterns  # noqa: E402
 
 # Test material. The prefixes are split so this file never trips its own guard.
 FAKE_ANTHROPIC = "sk-ant-" + "api03-" + "A" * 40
@@ -87,14 +87,14 @@ class FileTools(unittest.TestCase):
         self.assertEqual(d.rule, "secrets.write")
 
     def test_plugin_files_are_protected(self):
-        d = decide("Edit", {"file_path": str(ROOT / "secret_guard" / "guards.py"), "old_string": "a", "new_string": "b"}, self.cwd)
+        d = decide("Edit", {"file_path": str(ROOT / "cguard" / "guards.py"), "old_string": "a", "new_string": "b"}, self.cwd)
         self.assertEqual((d.rule, d.mode), ("self.protect", "deny"))
-        self.assertIsNone(decide("Read", {"file_path": str(ROOT / "secret_guard" / "guards.py")}, self.cwd))
+        self.assertIsNone(decide("Read", {"file_path": str(ROOT / "cguard" / "guards.py")}, self.cwd))
 
     def test_boundary_off_on_personal_and_ask_on_shared(self):
         # /tmp is always inside the boundary, so the outside file lives under the home folder
         import shutil
-        elsewhere = tempfile.mkdtemp(prefix="secret-guard-outside-", dir=os.path.expanduser("~"))
+        elsewhere = tempfile.mkdtemp(prefix="cguard-outside-", dir=os.path.expanduser("~"))
         self.addCleanup(shutil.rmtree, elsewhere, ignore_errors=True)
         outside = write(Path(elsewhere) / "file.txt", "hello")
         self.assertIsNone(decide("Read", {"file_path": outside}, self.cwd))
@@ -170,8 +170,8 @@ class BashCommands(unittest.TestCase):
         self.assertEqual(d.rule, "secrets.files")
 
     def test_cli_calls_are_not_self_protect(self):
-        self.assertIsNone(self.bash(f"python3 {ROOT}/secret_guard/cli.py set commit.add_all off"))
-        d = self.bash(f"echo x > {ROOT}/secret_guard/guards.py")
+        self.assertIsNone(self.bash(f"python3 {ROOT}/cguard/cli.py set commit.add_all off"))
+        d = self.bash(f"echo x > {ROOT}/cguard/guards.py")
         self.assertEqual(d.rule, "self.protect")
 
     def test_check_never_crashes_on_odd_input(self):
@@ -246,7 +246,7 @@ class GitGate(unittest.TestCase):
 class HookProcess(unittest.TestCase):
     def run_hook(self, data):
         env = dict(os.environ)
-        r = subprocess.run([sys.executable, str(ROOT / "secret_guard" / "hook.py")], input=json.dumps(data),
+        r = subprocess.run([sys.executable, str(ROOT / "cguard" / "hook.py")], input=json.dumps(data),
                            capture_output=True, text=True, env=env, timeout=20)
         return r.stdout.strip()
 
@@ -262,12 +262,12 @@ class HookProcess(unittest.TestCase):
 
     def test_audit_line_was_written(self):
         self.run_hook({"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "printenv"}, "cwd": TMP})
-        lines = Path(os.environ["SECRET_GUARD_AUDIT"]).read_text().splitlines()
+        lines = Path(os.environ["CGUARD_AUDIT"]).read_text().splitlines()
         self.assertTrue(any('"rule": "secrets.env"' in l for l in lines))
 
     def test_garbage_input_is_harmless(self):
         env = dict(os.environ)
-        r = subprocess.run([sys.executable, str(ROOT / "secret_guard" / "hook.py")], input="not json", capture_output=True, text=True, env=env)
+        r = subprocess.run([sys.executable, str(ROOT / "cguard" / "hook.py")], input="not json", capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout.strip(), "")
 

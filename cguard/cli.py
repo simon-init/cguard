@@ -9,23 +9,23 @@ import textwrap
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from secret_guard import __version__, audit, config, guards, patterns  # noqa: E402
+from cguard import __version__, audit, config, guards, patterns  # noqa: E402
 
-USAGE = """secret-guard: guards for a Claude Code session
+USAGE = """cguard: guards for a Claude Code session
 
-  secret-guard show                       current profile, rule modes and allowlists
-  secret-guard rules                      every rule with a one-line description
-  secret-guard explain <rule>             the full description of one rule
-  secret-guard set <rule> <deny|ask|off>  change one rule
-  secret-guard allow <list> <value>       add to an allowlist: paths, hosts, commit_paths, binary_extensions
-  secret-guard remove <list> <value>      remove from an allowlist
-  secret-guard profile <personal|shared>  switch profile (resets rule modes to that profile's defaults)
-  secret-guard audit [n]                  the last n decisions (default 20)
-  secret-guard why                        the most recent refusal, explained
-  secret-guard check '<shell command>'    what the guard would do with a command, without running it
-  secret-guard check-file <path>          whether a file counts as secret material
-  secret-guard config                     the interactive settings screen (needs a real terminal)
-  secret-guard version
+  cguard show                       current profile, rule modes and allowlists
+  cguard rules                      every rule with a one-line description
+  cguard explain <rule>             the full description of one rule
+  cguard set <rule> <deny|ask|off>  change one rule
+  cguard allow <list> <value>       add to an allowlist: paths, hosts, commit_paths, binary_extensions
+  cguard remove <list> <value>      remove from an allowlist
+  cguard profile <personal|shared>  switch profile (resets rule modes to that profile's defaults)
+  cguard audit [n]                  the last n decisions (default 20)
+  cguard why                        the most recent refusal, explained
+  cguard check '<shell command>'    what the guard would do with a command, without running it
+  cguard check-file <path>          whether a file counts as secret material
+  cguard config                     the interactive settings screen (needs a real terminal)
+  cguard version
 """
 
 
@@ -133,7 +133,7 @@ def main(argv=None):
             print(f"{args[0]}: {label or 'no secret material found in the first 4 KB'}")
             return 1 if label else 0
         elif cmd == "config":
-            from secret_guard import tui
+            from cguard import tui
             tui.run()
         elif cmd == "version":
             print(__version__)

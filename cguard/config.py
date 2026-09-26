@@ -1,7 +1,7 @@
 """Rules, profiles and the user's configuration file.
 
 Every rule has a mode: deny, ask or off. A profile is a set of default modes.
-The user's file at ~/.claude/secret-guard.json holds the chosen profile, any
+The user's file at ~/.claude/cguard.json holds the chosen profile, any
 rule overrides, and the allowlists. The hook reads it on every call, so a change
 applies to the next tool use without a restart.
 """
@@ -9,8 +9,8 @@ import json
 import os
 from pathlib import Path
 
-CONFIG_PATH = Path(os.environ.get("SECRET_GUARD_CONFIG") or os.path.expanduser("~/.claude/secret-guard.json"))
-AUDIT_PATH = Path(os.environ.get("SECRET_GUARD_AUDIT") or os.path.expanduser("~/.claude/secret-guard.log"))
+CONFIG_PATH = Path(os.environ.get("CGUARD_CONFIG") or os.path.expanduser("~/.claude/cguard.json"))
+AUDIT_PATH = Path(os.environ.get("CGUARD_AUDIT") or os.path.expanduser("~/.claude/cguard.log"))
 PLUGIN_ROOT = Path(os.environ.get("CLAUDE_PLUGIN_ROOT") or Path(__file__).resolve().parent.parent)
 
 MODES = ("deny", "ask", "off")
@@ -26,7 +26,7 @@ RULES = [
      "the call is refused. Placeholders like your_api_key_here pass.\n\n"
      "Blocked: Read, Edit, Write, Grep on the file, and any shell command whose arguments name it.\n\n"
      "Way forward given to Claude: open the file yourself, or move the secret out of it, or allow the "
-     "exact path with:  secret-guard allow paths <path>"),
+     "exact path with:  cguard allow paths <path>"),
     ("secrets.write", "Secrets", "Writing key material",
      "Refuse to write a private key block into any file.",
      "A private key that Claude writes to disk is a private key that was in the transcript first. "
@@ -46,7 +46,7 @@ RULES = [
      "working-tree diff when -a is used. The same detectors as secrets.files apply to the added lines.\n\n"
      "Way forward: remove the secret from the file, put it in an ignored .env or in the deployment "
      "platform, then commit again. A file that is legitimately committed with a token-shaped value, such "
-     "as a test fixture, is allowed with:  secret-guard allow commit_paths <path>"),
+     "as a test fixture, is allowed with:  cguard allow commit_paths <path>"),
     ("commit.binaries", "Commits", "Documents and large files in a commit",
      "Refuse git add of PDFs, office documents, archives, databases, and anything over the size limit.",
      "Real documents end up in repositories by accident: a browser download folder still set to the "
@@ -54,7 +54,7 @@ RULES = [
      "This rule refuses git add of files whose extension is on the binary list, or whose size is above "
      "the limit (default 5 MB), unless the path is on the commit allowlist.\n\n"
      "Way forward: move the file out of the repository, or allow the exact path with:  "
-     "secret-guard allow commit_paths <path>.  The list and the limit live in the configuration file."),
+     "cguard allow commit_paths <path>.  The list and the limit live in the configuration file."),
     ("commit.add_all", "Commits", "git add -A and git add .",
      "Refuse blanket adds. Files are added by name.",
      "git add -A, git add --all, git add . and git add * sweep in everything in the working tree, "
@@ -101,15 +101,15 @@ RULES = [
      "Ask before curl uploads, scp, rsync, sftp or nc to a host that is not on the allowlist.",
      "A file leaving the machine should be a decision, not a side effect. curl with -d @file, -F, -T or "
      "--upload-file, and scp, rsync, sftp, nc and socat to a remote host, ask first. Hosts on the "
-     "allowlist pass. Add your own server with:  secret-guard allow hosts <host>.  localhost is always "
+     "allowlist pass. Add your own server with:  cguard allow hosts <host>.  localhost is always "
      "allowed."),
 
     ("self.protect", "The guard itself", "Protect the guard and the credentials",
      "Refuse edits to the plugin, its configuration file, settings.json and the credentials file.",
      "A prompt injection that says 'first disable the security hook' should have nowhere to go. Claude "
      "may read the configuration but may not edit it with Edit, Write or a shell redirect. Changes go "
-     "through the command line tool, which Claude can run when you ask it to:  secret-guard set <rule> "
-     "<mode>,  secret-guard allow <list> <value>,  secret-guard profile <name>."),
+     "through the command line tool, which Claude can run when you ask it to:  cguard set <rule> "
+     "<mode>,  cguard allow <list> <value>,  cguard profile <name>."),
 
     ("paths.boundary", "Boundary", "Stay inside the project",
      "Ask before touching a file outside the working directory and the allowed folders.",
@@ -117,7 +117,7 @@ RULES = [
      "or your documents. Reads, edits and shell commands that name an existing path outside the working "
      "directory ask first. Always allowed: the working directory, the Claude configuration folder, /tmp "
      "and the paths on the allowlist.\n\nWay forward given to Claude: open a Claude session in that "
-     "folder instead, or allow the folder with:  secret-guard allow paths <folder>.  Off by default on "
+     "folder instead, or allow the folder with:  cguard allow paths <folder>.  Off by default on "
      "the personal profile, ask on the shared profile."),
     ("packages.install", "Boundary", "Installing packages",
      "Ask before pip install, npm install, npx, cargo install, brew, pacman, apt and similar.",
@@ -224,7 +224,7 @@ def save(cfg):
 
 def set_rule(cfg, rule_id, mode):
     if rule_id not in cfg["rules"]:
-        raise KeyError(f"no rule named {rule_id}; run: secret-guard rules")
+        raise KeyError(f"no rule named {rule_id}; run: cguard rules")
     if mode not in MODES:
         raise ValueError(f"mode must be one of {', '.join(MODES)}")
     cfg["rules"][rule_id] = mode

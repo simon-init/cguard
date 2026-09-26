@@ -55,7 +55,7 @@ class Screen:
     def draw(self):
         self.scr.erase()
         h, w = self.scr.getmaxyx()
-        header = f" secret-guard settings    profile: {self.cfg['profile']}{'    (unsaved changes)' if self.dirty else ''}"
+        header = f" cguard settings    profile: {self.cfg['profile']}{'    (unsaved changes)' if self.dirty else ''}"
         self.scr.addnstr(0, 0, header.ljust(w), w - 1, curses.A_REVERSE)
         if self.view == "list":
             self.draw_list(h, w)
@@ -98,7 +98,7 @@ class Screen:
             body.extend(textwrap.wrap(para, width=max(20, w - 4)) or [""])
             body.append("")
         body.append(f"Modes: deny refuses, ask confirms with you first, off disables this rule.")
-        body.append(f"Change it here with space, or from any terminal: secret-guard set {r['id']} <deny|ask|off>")
+        body.append(f"Change it here with space, or from any terminal: cguard set {r['id']} <deny|ask|off>")
         visible = h - 8
         self.scroll = max(0, min(self.scroll, max(0, len(body) - visible)))
         for i, line in enumerate(body[self.scroll:self.scroll + visible]):

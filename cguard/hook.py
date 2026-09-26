@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from secret_guard import audit, config, guards  # noqa: E402
+from cguard import audit, config, guards  # noqa: E402
 
 
 def main():

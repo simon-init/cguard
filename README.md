@@ -1,4 +1,4 @@
-# secret-guard
+# cguard
 
 A Claude Code plugin that keeps secrets, other people's documents and destructive commands
 out of an assistant session. Every refusal comes with a way forward.
@@ -39,10 +39,10 @@ A guard never says only "no". Every refusal Claude receives has the same shape: 
 blocked, why in one line, how to do it yourself, and how to allow it. For example:
 
 ```
-secret-guard deny [commit.binaries]: `git add` of /home/me/app/docs/case.pdf: case.pdf is a .pdf file.
+cguard deny [commit.binaries]: `git add` of /home/me/app/docs/case.pdf: case.pdf is a .pdf file.
 Why: documents and large files in a repository are usually accidents, and history keeps them forever.
 Do it yourself: move it out: `mv /home/me/app/docs/case.pdf ~/`  and add the rest by name.
-Or allow it: `secret-guard allow commit_paths docs/case.pdf`
+Or allow it: `cguard allow commit_paths docs/case.pdf`
 ```
 
 Claude relays that to you. You are never left holding a wall.
@@ -52,14 +52,14 @@ Claude relays that to you. You are never left holding a wall.
 In Claude Code, from this repository:
 
 ```
-claude plugin marketplace add simon-init/secret-guard
-claude plugin install secret-guard@secret-guard
+claude plugin marketplace add simon-init/cguard
+claude plugin install cguard@cguard
 ```
 
 Then put the command line on your path, once:
 
 ```
-ln -s ~/.claude/plugins/marketplaces/secret-guard/bin/secret-guard ~/.local/bin/secret-guard
+ln -s ~/.claude/plugins/marketplaces/cguard/bin/cguard ~/.local/bin/cguard
 ```
 
 It needs Python 3.11 or later and git. Nothing else is installed.
@@ -69,21 +69,21 @@ It needs Python 3.11 or later and git. Nothing else is installed.
 From any terminal, or by asking Claude to run it:
 
 ```
-secret-guard show                        what is on, and the allowlists
-secret-guard set commit.add_all ask      change one rule
-secret-guard allow hosts my-server.example.com
-secret-guard allow paths ~/other-project
-secret-guard allow commit_paths fixtures/sample.pdf
-secret-guard profile shared              switch profile
-secret-guard audit                       the last decisions
-secret-guard why                         the last refusal, explained
-secret-guard check 'rm -rf build'        dry-run a command
+cguard show                        what is on, and the allowlists
+cguard set commit.add_all ask      change one rule
+cguard allow hosts my-server.example.com
+cguard allow paths ~/other-project
+cguard allow commit_paths fixtures/sample.pdf
+cguard profile shared              switch profile
+cguard audit                       the last decisions
+cguard why                         the last refusal, explained
+cguard check 'rm -rf build'        dry-run a command
 ```
 
 The interactive screen, for a person in a terminal:
 
 ```
-secret-guard config
+cguard config
 ```
 
 The keys on that screen:
@@ -94,15 +94,15 @@ The keys on that screen:
 - The left arrow returns to the list.
 - `s` saves and `q` quits.
 
-Inside a Claude session, `/secret-guard:config`, `/secret-guard:audit` and
-`/secret-guard:why` show the same things.
+Inside a Claude session, `/cguard:config`, `/cguard:audit` and
+`/cguard:why` show the same things.
 
-The configuration lives in `~/.claude/secret-guard.json`. The hook reads the file on
+The configuration lives in `~/.claude/cguard.json`. The hook reads the file on
 every call, so a change applies to the next tool use without a restart.
 
 ## The audit log
 
-Every refusal and every ask is appended to `~/.claude/secret-guard.log` as one JSON line:
+Every refusal and every ask is appended to `~/.claude/cguard.log` as one JSON line:
 time, tool, rule, mode, what, and the target with any secret masked. It stays on the
 machine. To log every shell command as well, turn on `audit.commands` in the
 configuration file.

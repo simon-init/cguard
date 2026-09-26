@@ -1,10 +1,10 @@
 {
-  "name": "secret-guard",
+  "name": "cguard",
   "description": "Keeps secrets, other people's documents and destructive commands out of a Claude Code session. Every refusal comes with a way forward.",
   "version": "0.1.0",
   "author": { "name": "Simon Ertushi" },
-  "homepage": "https://github.com/simon-init/secret-guard",
-  "repository": "https://github.com/simon-init/secret-guard",
+  "homepage": "https://github.com/simon-init/cguard",
+  "repository": "https://github.com/simon-init/cguard",
   "license": "MIT",
   "keywords": ["security", "secrets", "guardrails", "hooks", "git", "privacy"],
   "hooks": {
@@ -14,9 +14,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/secret_guard/hook.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/cguard/hook.py\"",
             "timeout": 15,
-            "statusMessage": "secret-guard"
+            "statusMessage": "cguard"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/secret_guard/hook.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/cguard/hook.py\"",
             "timeout": 15
           }
         ]

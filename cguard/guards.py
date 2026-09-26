@@ -28,7 +28,7 @@ class Decision:
     allow_hint: str = ""
 
     def reason(self):
-        lines = [f"secret-guard {self.mode} [{self.rule}]: {self.what}", f"Why: {self.why}"]
+        lines = [f"cguard {self.mode} [{self.rule}]: {self.what}", f"Why: {self.why}"]
         if self.do_yourself:
             lines.append(f"Do it yourself: {self.do_yourself}")
         if self.allow_hint:
@@ -64,7 +64,7 @@ def _is_protected(path):
 
 
 def _cli_token(token):
-    return token.endswith("/cli.py") or token.endswith("/bin/secret-guard") or token == "secret-guard"
+    return token.endswith("/cli.py") or token.endswith("/bin/cguard") or token == "cguard"
 
 
 def _allowed_path(cfg, path):
@@ -222,8 +222,8 @@ def check_file_tools(tool, tool_input, cwd, cfg):
                 d = _dec(cfg, "self.protect",
                          f"editing {candidate}, which belongs to the guard or holds credentials.",
                          "the guard's own files and the credentials must not be changed from inside a session.",
-                         "run `secret-guard config` in a terminal for the settings screen.",
-                         "ask me to run `secret-guard set <rule> <mode>` or `secret-guard allow <list> <value>`; those go through the tool, not the file.")
+                         "run `cguard config` in a terminal for the settings screen.",
+                         "ask me to run `cguard set <rule> <mode>` or `cguard allow <list> <value>`; those go through the tool, not the file.")
                 if d:
                     return d
             if not _allowed_path(cfg, candidate):
@@ -233,7 +233,7 @@ def check_file_tools(tool, tool_input, cwd, cfg):
                              f"{tool} on {candidate}, which contains {label}.",
                              "secret material is never read or modified by Claude; the file content did not reach the model.",
                              f"open it yourself: `${{EDITOR:-nano}} {candidate}`. If you need me to work on it, remove the secret first or paste the non-secret parts.",
-                             f"`secret-guard allow paths {candidate}`")
+                             f"`cguard allow paths {candidate}`")
                     if d:
                         return d
             if _outside(cfg, cwd, candidate):
@@ -241,7 +241,7 @@ def check_file_tools(tool, tool_input, cwd, cfg):
                          f"{tool} on {candidate}, outside the project {cwd}.",
                          "a session stays inside the folder it was opened in unless a folder is allowed.",
                          f"open a Claude session in that folder: `cd {os.path.dirname(candidate)} && claude`.",
-                         f"`secret-guard allow paths {os.path.dirname(candidate)}`")
+                         f"`cguard allow paths {os.path.dirname(candidate)}`")
                 if d:
                     return d
 
@@ -304,8 +304,8 @@ def check_bash(command, cwd, cfg):
             if _is_protected(candidate) and re.search(r">|\bsed\s+-i|\btee\b|\brm\b|\bmv\b|\bcp\b|\btruncate\b|\bchmod\b|\bpython3?\b|\bperl\b|\binstall\b", command):
                 d = _dec(cfg, "self.protect", f"a command that writes to {candidate}, which belongs to the guard or holds credentials.",
                          "the guard's own files and the credentials are not changed from inside a session.",
-                         "run `secret-guard config` in a terminal.",
-                         "ask me to run `secret-guard set <rule> <mode>` instead.")
+                         "run `cguard config` in a terminal.",
+                         "ask me to run `cguard set <rule> <mode>` instead.")
                 if d:
                     return d
 
@@ -333,7 +333,7 @@ def check_bash(command, cwd, cfg):
     for pattern, why in DESTRUCTIVE_RE:
         if pattern.search(command):
             d = _dec(cfg, "commands.destructive", f"`{command.strip()[:120]}`", why + ".",
-                     "run it yourself if the loss is intended.", "`secret-guard set commands.destructive off`")
+                     "run it yourself if the loss is intended.", "`cguard set commands.destructive off`")
             if d:
                 return d
 
@@ -342,7 +342,7 @@ def check_bash(command, cwd, cfg):
         d = _dec(cfg, "exfil.pipe_to_shell", "a download piped straight into an interpreter.",
                  "the script runs before anyone has read it; this is how machines get compromised.",
                  "download it to a file first, for example `curl -fsSL <url> -o /tmp/install.sh`, read it, then run it from the file.",
-                 "`secret-guard set exfil.pipe_to_shell off`")
+                 "`cguard set exfil.pipe_to_shell off`")
         if d:
             return d
 
@@ -351,7 +351,7 @@ def check_bash(command, cwd, cfg):
         d = _dec(cfg, "commands.sudo", f"`{command.strip()[:120]}` runs as root.",
                  "root removes every other safety net.",
                  f"open a terminal and run it yourself: `cd {cwd}` then the command above.",
-                 "`secret-guard set commands.sudo off`")
+                 "`cguard set commands.sudo off`")
         if d:
             return d
 
@@ -365,24 +365,24 @@ def check_bash(command, cwd, cfg):
             d = _dec(cfg, "secrets.env", f"`{' '.join(seg)}` prints environment variables into the transcript.",
                      "API keys live in the environment, and the transcript leaves the machine with every request.",
                      "run it yourself in a terminal; if I need one non-secret value, tell me its name and I will print only that.",
-                     "`secret-guard set secrets.env off`")
+                     "`cguard set secrets.env off`")
             if d:
                 return d
         if head == "export" and "-p" in seg:
             d = _dec(cfg, "secrets.env", "`export -p` prints every exported variable.",
-                     "that includes every key in the environment.", "run it yourself in a terminal.", "`secret-guard set secrets.env off`")
+                     "that includes every key in the environment.", "run it yourself in a terminal.", "`cguard set secrets.env off`")
             if d:
                 return d
     for m in ENV_PRINT.finditer(command):
         if patterns.SECRET_NAME.search(m.group(1)):
             d = _dec(cfg, "secrets.env", f"printing ${m.group(1)} into the transcript.",
                      "its name says it is a secret, and the transcript leaves the machine.",
-                     f"check it yourself: `test -n \"${m.group(1)}\" && echo set || echo unset`.", "`secret-guard set secrets.env off`")
+                     f"check it yourself: `test -n \"${m.group(1)}\" && echo set || echo unset`.", "`cguard set secrets.env off`")
             if d:
                 return d
     if re.search(r"/proc/(\d+|self)/environ", command):
         d = _dec(cfg, "secrets.env", "reading a process environment from /proc.", "that is every variable of that process, keys included.",
-                 "read it yourself in a terminal.", "`secret-guard set secrets.env off`")
+                 "read it yourself in a terminal.", "`cguard set secrets.env off`")
         if d:
             return d
 
@@ -412,7 +412,7 @@ def check_bash(command, cwd, cfg):
                             d = _dec(cfg, "commit.binaries", f"`git add` of {f}: {why}.",
                                      "documents and large files in a repository are usually accidents, and history keeps them forever.",
                                      f"move it out: `mv {f} ~/`  and add the rest by name.",
-                                     f"`secret-guard allow commit_paths {os.path.relpath(f, repo_dir)}`")
+                                     f"`cguard allow commit_paths {os.path.relpath(f, repo_dir)}`")
                             if d:
                                 return d
                         label = patterns.classify_file(f)
@@ -420,14 +420,14 @@ def check_bash(command, cwd, cfg):
                             d = _dec(cfg, "commit.secrets", f"`git add` of {f}, which contains {label}.",
                                      "a secret in a commit is a secret in every clone, forever.",
                                      f"move the value into an ignored .env or into the deployment platform, then add the file again.",
-                                     f"`secret-guard allow commit_paths {os.path.relpath(f, repo_dir)}`")
+                                     f"`cguard allow commit_paths {os.path.relpath(f, repo_dir)}`")
                             if d:
                                 return d
         elif sub == "commit":
             if "--no-verify" in args or "-n" in args:
                 d = _dec(cfg, "commit.no_verify", "`git commit --no-verify` skips the commit hooks.",
                          "those hooks are usually the checks that stop secrets and broken code from leaving the machine.",
-                         "if a hook is wrong, fix the hook; if it must be skipped once, run the commit yourself.", "`secret-guard set commit.no_verify off`")
+                         "if a hook is wrong, fix the hook; if it must be skipped once, run the commit yourself.", "`cguard set commit.no_verify off`")
                 if d:
                     return d
             if cfg["rules"].get("commit.secrets") != "off" or cfg["rules"].get("commit.binaries") != "off":
@@ -449,7 +449,7 @@ def check_bash(command, cwd, cfg):
                         d = _dec(cfg, "commit.secrets", f"the staged change to {f} contains {label}.",
                                  "a secret in a commit is a secret in every clone, forever.",
                                  f"remove it: `git -C {repo_dir} restore --staged {f}`, move the value into an ignored .env, then stage the file again.",
-                                 f"`secret-guard allow commit_paths {f}`")
+                                 f"`cguard allow commit_paths {f}`")
                         if d:
                             return d
                 names = _run_git(repo_dir, ["diff", "--cached", "--name-only", "--diff-filter=A"] if not staged_all else ["diff", "--name-only", "--diff-filter=A", "HEAD"])
@@ -462,19 +462,19 @@ def check_bash(command, cwd, cfg):
                         d = _dec(cfg, "commit.binaries", f"the commit would add {f}: {why}.",
                                  "documents and large files in a repository are usually accidents, and history keeps them forever.",
                                  f"unstage it: `git -C {repo_dir} restore --staged {f}` and move the file out of the repository.",
-                                 f"`secret-guard allow commit_paths {f}`")
+                                 f"`cguard allow commit_paths {f}`")
                         if d:
                             return d
         elif sub == "push":
             if "--no-verify" in args:
                 d = _dec(cfg, "commit.no_verify", "`git push --no-verify` skips the push hooks.",
-                         "those hooks exist to stop bad pushes.", "run the push yourself if it must be skipped once.", "`secret-guard set commit.no_verify off`")
+                         "those hooks exist to stop bad pushes.", "run the push yourself if it must be skipped once.", "`cguard set commit.no_verify off`")
                 if d:
                     return d
             if any(a in ("--force", "-f", "--force-with-lease") or a.startswith("--force-with-lease=") or (a.startswith("+") and ":" in a) for a in args):
                 d = _dec(cfg, "commit.force_push", f"`{' '.join(seg)}` rewrites history on the remote.",
                          "other clones and other people may hold the history being replaced.",
-                         "run it yourself once you have confirmed nobody else has pulled.", "`secret-guard set commit.force_push off`")
+                         "run it yourself once you have confirmed nobody else has pulled.", "`cguard set commit.force_push off`")
                 if d:
                     return d
 
@@ -489,7 +489,7 @@ def check_bash(command, cwd, cfg):
                 d = _dec(cfg, "exfil.upload", f"`{' '.join(seg)[:120]}` sends data to {', '.join(hosts) or 'an unknown host'}.",
                          "data leaving the machine should be a decision, not a side effect.",
                          "run it yourself in a terminal if the destination is right.",
-                         f"`secret-guard allow hosts {hosts[0]}`" if hosts else "`secret-guard set exfil.upload off`")
+                         f"`cguard allow hosts {hosts[0]}`" if hosts else "`cguard set exfil.upload off`")
                 if d:
                     return d
         if head in REMOTE_COPY:
@@ -497,7 +497,7 @@ def check_bash(command, cwd, cfg):
             if hosts and not all(_host_allowed(cfg, h) for h in hosts):
                 d = _dec(cfg, "exfil.upload", f"`{' '.join(seg)[:120]}` copies files to {', '.join(hosts)}.",
                          "files leaving the machine should be a decision, not a side effect.",
-                         "run it yourself in a terminal if the destination is right.", f"`secret-guard allow hosts {hosts[0]}`")
+                         "run it yourself in a terminal if the destination is right.", f"`cguard allow hosts {hosts[0]}`")
                 if d:
                     return d
         if head in RAW_NET:
@@ -505,7 +505,7 @@ def check_bash(command, cwd, cfg):
             host = args[0] if args else ""
             if host and not _host_allowed(cfg, host):
                 d = _dec(cfg, "exfil.upload", f"`{' '.join(seg)[:120]}` opens a raw connection to {host}.",
-                         "a raw socket can carry anything out of the machine.", "run it yourself in a terminal.", f"`secret-guard allow hosts {host}`")
+                         "a raw socket can carry anything out of the machine.", "run it yourself in a terminal.", f"`cguard allow hosts {host}`")
                 if d:
                     return d
 
@@ -514,7 +514,7 @@ def check_bash(command, cwd, cfg):
     if m:
         d = _dec(cfg, "packages.install", f"`{command.strip()[:120]}` installs code from the internet.",
                  "every install brings code onto the machine that nobody here has read.",
-                 "run the install yourself after a look at the package page.", "`secret-guard set packages.install off`")
+                 "run the install yourself after a look at the package page.", "`cguard set packages.install off`")
         if d:
             return d
 
@@ -527,14 +527,14 @@ def check_bash(command, cwd, cfg):
             d = _dec(cfg, "secrets.files", f"this command touches {candidate}, which contains {label}.",
                      "secret material is never read by Claude; the content did not reach the model.",
                      f"run it yourself in a terminal, or move the secret out of {os.path.basename(candidate)} first.",
-                     f"`secret-guard allow paths {candidate}`")
+                     f"`cguard allow paths {candidate}`")
             if d:
                 return d
         if _outside(cfg, cwd, candidate):
             d = _dec(cfg, "paths.boundary", f"this command touches {candidate}, outside the project {cwd}.",
                      "a session stays inside the folder it was opened in unless a folder is allowed.",
                      f"run it yourself, or open a Claude session there: `cd {candidate if os.path.isdir(candidate) else os.path.dirname(candidate)} && claude`.",
-                     f"`secret-guard allow paths {candidate if os.path.isdir(candidate) else os.path.dirname(candidate)}`")
+                     f"`cguard allow paths {candidate if os.path.isdir(candidate) else os.path.dirname(candidate)}`")
             if d:
                 return d
     return None
@@ -574,4 +574,4 @@ def session_check(cwd, cfg):
                 break
     if not problems:
         return None
-    return "secret-guard session check: " + "; ".join(problems) + ". Tell the user once, then continue."
+    return "cguard session check: " + "; ".join(problems) + ". Tell the user once, then continue."

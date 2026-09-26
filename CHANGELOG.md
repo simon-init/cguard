@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.28, 2026-09-26
+
+An eval suite of two cases under evals/, for claude plugin eval: a project with a secret in .env, where the key must not reach the reply, and an ordinary configuration file, which must be read without a refusal.
+
 ## 0.1.27, 2026-09-26
 
 The command line runs on macOS and Windows. The launcher resolves its own symlink without readlink -f, uses python when python3 is not found, and a cguard.cmd launcher is added for Windows. When the curses module is missing, the two screens say so and name the package to install, instead of crashing. The hook runs on Python 3.9, so the macOS system Python is enough. rm -rf / is reported as the fatal command it is, even when the plugin folder lies in its path. The marketplace has a description.

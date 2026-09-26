@@ -198,6 +198,16 @@ the wrong folder. Those are most of the incidents that happen.
 python3 -m unittest discover -s tests -v
 ```
 
+The unit tests cover the guards without a model. The `evals/` folder holds two behaviour
+cases for Claude Code's plugin evals: a project with a secret in `.env`, where the key must
+not reach the reply, and an ordinary configuration file, which must be read without a
+refusal. Each case seeds its workspace with a script, so the run needs the scaffold flag.
+The runs call the model on your account.
+
+```
+claude plugin eval . --scaffold
+```
+
 ## License
 
 MIT.

@@ -24,6 +24,9 @@ def main():
         cfg = config.load()
         if event == "SessionStart":
             note = guards.session_check(cwd, cfg)
+            if not config.CONFIG_PATH.exists():
+                note = ("cguard is installed but not set up. Tell the user once, in one line, to run "
+                        "`cguard setup` in a terminal, then continue.") + (" " + note if note else "")
             if note:
                 print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": note}}))
             return

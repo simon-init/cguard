@@ -29,6 +29,7 @@ USAGE = """cguard: guards for a Claude Code session
   cguard denylist status            are the known secret paths in Claude Code's settings
   cguard denylist show              list the rules
   cguard denylist install           add the missing rules to the settings file, keep the rest
+  cguard setup                      the guided setup, once after install, safe to run again
   cguard config                     the interactive settings screen (needs a real terminal)
   cguard version
 """
@@ -181,6 +182,9 @@ def main(argv=None):
             else:
                 added = denylist.install()
                 print(f"added {added} rules to {denylist.SETTINGS_PATH}; {len(denylist.RULES)} present now. Restart Claude Code to load them.")
+        elif cmd == "setup":
+            from cguard import setup
+            return setup.run()
         elif cmd == "config":
             from cguard import tui
             tui.run()

@@ -289,6 +289,20 @@ DESTRUCTIVE_RE = [
     (re.compile(r"(?i)\bDROP\s+(TABLE|DATABASE|SCHEMA)\b"), "DROP deletes a table or database"),
     (re.compile(r"(?i)\bTRUNCATE\s+(TABLE\s+)?\w"), "TRUNCATE empties a table"),
     (re.compile(r"\bkill\s+-9\s+-1\b"), "kill -9 -1 kills every process you own"),
+    (re.compile(r"\bterraform\b[^|;&]*\b(destroy|state\s+rm)\b"), "terraform destroy tears down real infrastructure"),
+    (re.compile(r"\bkubectl\s+delete\b(?:\s+(?:namespace|ns)\b|[^|;&]*\s(?:--all|--all-namespaces|-A|-f)\b)"),
+     "kubectl delete of a namespace, a manifest or --all removes running workloads"),
+    (re.compile(r"\bhelm\s+(uninstall|delete)\b"), "helm uninstall removes a release"),
+    (re.compile(r"\bprisma\s+(migrate\s+reset|db\s+push\b[^|;&]*--(force-reset|accept-data-loss))"),
+     "this resets the database and loses its rows"),
+    (re.compile(r"\b(rails|rake)\s+db:(drop|reset|schema:load)\b|\bflyway\s+clean\b|\balembic\s+downgrade\s+base\b"),
+     "this drops or resets the database"),
+    (re.compile(r"\bdocker\s+compose\b[^|;&]*\bdown\b[^|;&]*\s(?:-v|--volumes)\b|\bdocker\s+volume\s+rm\b"),
+     "this deletes Docker volumes, and the data in them"),
+    (re.compile(r"\b(aws|gcloud|az|doctl|hcloud|flyctl|fly)\b[^|;&]*\b(delete|terminate|destroy)[\w-]*"),
+     "a cloud CLI delete removes a resource that may hold data"),
+    (re.compile(r"\baws\s+s3\s+(rb\b|rm\b[^|;&]*--recursive)"), "this removes a bucket or a whole prefix"),
+    (re.compile(r"\bdropdb\b|\bredis-cli\b[^|;&]*\bflush(all|db)\b"), "this drops a database or empties a Redis store"),
 ]
 
 PIPE_TO_SHELL = re.compile(r"\b(curl|wget)\b[^|]*\|\s*(?:sudo\s+(?:-\S+\s+)*)?(sh|bash|zsh|fish|dash|python3?|perl|node|ruby)\b")

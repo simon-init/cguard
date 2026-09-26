@@ -19,7 +19,9 @@ AUDIT_PATH = Path(os.environ.get("CGUARD_AUDIT") or os.path.expanduser("~/.claud
 PLUGIN_ROOT = Path(os.environ.get("CLAUDE_PLUGIN_ROOT") or Path(__file__).resolve().parent.parent)
 
 MODES = ("deny", "ask", "off")
-FORMATS = len(patterns.PREFIXED)
+OWN_FORMATS = len(patterns.PREFIXED)
+IMPORTED_FORMATS = len(patterns.GITLEAKS)
+FORMATS = OWN_FORMATS + IMPORTED_FORMATS
 
 ABOUT = f"""## What it is
 One hook. Claude Code runs it before every Read, Edit, Write, Grep and shell command.
@@ -46,8 +48,11 @@ Two profiles set the defaults. Standard: Claude moves freely between folders. Co
 ## How secrets are found
 By content, not by file name. The hook reads the first 64 KB of a file, which is the whole file for almost every configuration or source file, and never more than 4 MB in one tool call.
 
-- {FORMATS} known key formats with a fixed shape: cloud, API and payment keys, private key blocks, connection strings, tokens.
+- {FORMATS} known key formats with a fixed shape: cloud, API and payment keys, private key blocks, connection strings, tokens. {OWN_FORMATS} are cguard's own and {IMPORTED_FORMATS} are imported from the gitleaks rule set, MIT, fixed-prefix rules only.
 - NAME=value lines where the name says secret and the value looks random.
+
+## Setup
+cguard setup walks through the profile, the known secret paths, your trusted hosts and the commands, once after install. It is safe to run again.
 
 ## What it cannot see
 - A secret past the first 64 KB of a large file.
@@ -109,7 +114,7 @@ RULES = [
      "Refuse to read, edit, grep or shell-touch a file whose content looks like a key or credential.",
      f"## How it works\n"
      f"Before a tool touches a file, the hook opens that file itself and reads the first 64 KB, which is the whole file for almost every configuration or source file. Across one tool call it reads no more than 4 MB in total. It looks for two things.\n\n"
-     f"- {FORMATS} known formats with a fixed shape: private key blocks, keys for the major clouds, AI providers, payment and messaging services, Google service account files, kubeconfig keys, connection strings and URLs that carry a password, bearer tokens and JSON web tokens.\n"
+     f"- {FORMATS} known formats with a fixed shape: private key blocks, keys for the major clouds, AI providers, payment and messaging services, Google service account files, kubeconfig keys, connection strings and URLs that carry a password, bearer tokens and JSON web tokens. {OWN_FORMATS} are cguard's own, {IMPORTED_FORMATS} are imported from the gitleaks rule set (MIT), fixed-prefix rules only, refreshed with tools/sync_gitleaks.py.\n"
      f"- Any NAME=value or NAME: value line where NAME contains SECRET, TOKEN, PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or CREDENTIAL, and the value is at least 12 characters and looks random.\n\n"
      f"Placeholders such as your_api_key_here, <fill in> or a run of the same character pass. The file content is read by the hook, never by the model.\n\n"
      f"## What it does not catch\n"
@@ -213,7 +218,7 @@ RULES = [
      "- A command the hook does not know.\n\n"
      "This is a list, not a proof."),
     ("commands.destructive", "Commands", "Commands that lose work",
-     "Ask before git reset --hard, git clean -f, chmod -R 777, docker prune, DROP TABLE and similar.",
+     "Ask before git reset --hard, git clean -f, docker prune, DROP TABLE, terraform destroy, kubectl delete, migration resets and similar.",
      "## How it works\n"
      "The hook matches the shell line against a list of commands that throw something away, and asks for confirmation with the command shown in full.\n\n"
      "## The list\n"
@@ -225,7 +230,13 @@ RULES = [
      "- docker system prune, docker volume prune, docker image prune\n"
      "- docker run with --privileged or with the Docker socket mounted\n"
      "- DROP TABLE, DROP DATABASE, DROP SCHEMA, TRUNCATE\n"
-     "- kill -9 -1\n\n"
+     "- kill -9 -1\n"
+     "- terraform destroy and terraform state rm\n"
+     "- kubectl delete of a namespace, with -f, or with --all, and helm uninstall\n"
+     "- prisma migrate reset, prisma db push --force-reset, rails db:drop, flyway clean, alembic downgrade base\n"
+     "- docker compose down -v and docker volume rm\n"
+     "- aws, gcloud, az, doctl, hcloud and fly commands that delete, terminate or destroy, plus aws s3 rb and aws s3 rm --recursive\n"
+     "- dropdb and redis-cli flushall\n\n"
      "## Why it asks rather than refuses\n"
      "Each of these is legitimate often enough that a refusal would be an obstacle. What they share is that git or a backup may not have what they delete: uncommitted changes, untracked files, permissions, images and volumes, a table. A yes from a person who has read the command is the right price."),
     ("commands.sudo", "Commands", "sudo",

@@ -81,6 +81,22 @@ class Patterns(unittest.TestCase):
         self.assertIn("****", out)
 
 
+class ImportedFormats(unittest.TestCase):
+    def test_gitleaks_rules_load_and_match(self):
+        self.assertGreaterEqual(len(patterns.GITLEAKS), 90)
+        cases = {
+            "dapi" + "0123456789abcdef0123456789abcdef": "a databricks api token",
+            "doo_v1_" + "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0": "a digitalocean access token",
+            "EAAC" + "Kz9Qm2Xv7Lp4Rt8Bw3Nh6Yc1Df5Gk0Js" * 4: "a facebook page access token",
+        }
+        for text, label in cases.items():
+            self.assertEqual(patterns.find_secret(text), label, text[:10])
+
+    def test_imported_rules_stay_quiet_on_prose(self):
+        for text in ("The API returned dapi errors twice.", "Set doo_v1 to false in the form.", "EAAC is an acronym here."):
+            self.assertIsNone(patterns.find_secret(text), text)
+
+
 class FileTools(unittest.TestCase):
     def setUp(self):
         self.cwd = tempfile.mkdtemp(prefix="proj-", dir=TMP)
@@ -146,10 +162,16 @@ class BashCommands(unittest.TestCase):
 
     def test_destructive_commands_ask(self):
         for cmd in ("git reset --hard HEAD~1", "git clean -fdx", "chmod -R 777 ./data", "docker system prune -a",
-                    "psql -c 'DROP TABLE users'", "docker run --privileged ubuntu"):
+                    "psql -c 'DROP TABLE users'", "docker run --privileged ubuntu",
+                    "terraform destroy -auto-approve", "kubectl delete namespace staging", "kubectl delete -f deploy.yaml",
+                    "prisma migrate reset", "docker compose down -v", "aws ec2 terminate-instances --instance-ids i-1",
+                    "gcloud sql instances delete prod", "rails db:drop", "redis-cli flushall"):
             d = self.bash(cmd)
             self.assertIsNotNone(d, cmd)
             self.assertEqual((d.rule, d.mode), ("commands.destructive", "ask"), cmd)
+        for cmd in ("kubectl get pods", "kubectl delete pod web-1", "terraform plan", "docker compose down",
+                    "aws s3 ls s3://bucket", "prisma migrate dev", "helm list"):
+            self.assertIsNone(self.bash(cmd), cmd)
 
     def test_sudo_asks(self):
         d = self.bash("sudo systemctl restart nginx")
@@ -294,6 +316,15 @@ class HookProcess(unittest.TestCase):
         r = subprocess.run([sys.executable, str(ROOT / "cguard" / "hook.py")], input="not json", capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout.strip(), "")
+
+
+class FirstRun(unittest.TestCase):
+    def test_session_start_points_at_setup_until_configured(self):
+        env = dict(os.environ, CGUARD_CONFIG=os.path.join(TMP, "absent", "cguard.json"))
+        out = subprocess.run([sys.executable, "-m", "cguard.hook"], input=json.dumps(
+            {"hook_event_name": "SessionStart", "cwd": TMP}), capture_output=True, text=True, env=env,
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.assertIn("cguard setup", out.stdout)
 
 
 class DenyList(unittest.TestCase):

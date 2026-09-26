@@ -21,7 +21,7 @@ the model. Only the decision does.
 | `commit.no_verify` | deny | Refuse `--no-verify` on commit and push |
 | `commit.force_push` | ask | Confirm before a force push |
 | `commands.fatal` | deny | Refuse `rm -rf` on `/`, `~` or `.`, `mkfs`, `dd` onto a disk, fork bombs |
-| `commands.destructive` | ask | Confirm before `git reset --hard`, `git clean -f`, `chmod -R 777`, `docker prune`, `DROP TABLE` and similar |
+| `commands.destructive` | ask | Confirm before `git reset --hard`, `git clean -f`, `docker prune`, `DROP TABLE`, `terraform destroy`, `kubectl delete`, migration resets, cloud CLI deletes, `docker compose down -v` and similar |
 | `commands.sudo` | ask | Confirm before any command run as root |
 | `exfil.pipe_to_shell` | deny | Refuse `curl ... \| sh` and `wget ... \| bash` |
 | `exfil.upload` | ask | Confirm before curl uploads, scp, rsync, sftp or nc to a host that is not on the allowlist |
@@ -88,6 +88,28 @@ ln -s ~/.claude/plugins/marketplaces/cguard/bin/cguard ~/.local/bin/cguard
 ```
 
 It needs Python 3.11 or later and git. Nothing else is installed.
+
+## Setup
+
+Once after install, in a terminal:
+
+```
+cguard setup
+```
+
+Five short steps: the profile, the known secret paths, the hosts you trust, the five
+commands worth knowing, and a summary of what was written where. Enter keeps the value
+shown. It is safe to run again. Until the configuration file exists, a session starting
+with the plugin installed gets one line asking Claude to point you at setup.
+
+## Where the key formats come from
+
+The hook knows two sets of formats. The first set is in `cguard/patterns.py`, written
+for this plugin. The second set is imported from the gitleaks rule set, MIT, and lives
+in the generated file `cguard/rules_gitleaks.py`. The import keeps only rules with a
+fixed prefix. Rules that match a keyword plus any random string are left out on purpose.
+In a hook that blocks work, such rules refuse real files. The import script is
+`tools/sync_gitleaks.py`. The license notice is in `THIRD_PARTY_LICENSES.md`.
 
 ## Changing the configuration
 

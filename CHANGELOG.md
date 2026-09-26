@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4, 2026-09-26
+
+An empty row between the sections of the settings screen.
+
 ## 0.1.3, 2026-09-26
 
 Profiles are `standard` and `contained`, named for what they change: how far Claude may move, not whose data is on the disk. The About text states the token cost of a refusal and an ask accurately.

@@ -23,6 +23,7 @@ def _items():
     for name in config.PROFILES:
         out.append(("profile", name))
     for group in config.GROUPS:
+        out.append(("blank", ""))
         out.append(("group", group))
         for r in config.RULES:
             if r[1] == group:
@@ -111,6 +112,8 @@ class Screen:
             y = top + row
             selected = idx == self.cursor
             bold = curses.A_BOLD if selected else 0
+            if kind == "blank":
+                continue
             if kind == "group":
                 self.put(y, 2, value.upper(), self.pair(C_ACCENT, curses.A_BOLD))
                 self.put(y, 3 + len(value), " " + "─" * max(0, w - len(value) - 6), self.pair(C_DIM))
@@ -197,7 +200,7 @@ class Screen:
             idx += delta
             if idx < 0 or idx >= len(self.items):
                 return
-            if self.items[idx][0] != "group":
+            if self.items[idx][0] not in ("group", "blank"):
                 self.cursor = idx
                 return
 

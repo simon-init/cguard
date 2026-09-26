@@ -342,6 +342,38 @@ class HookProcess(unittest.TestCase):
         self.assertEqual(parsed["hookSpecificOutput"]["permissionDecision"], "deny")
         self.assertIn("Do it yourself", parsed["hookSpecificOutput"]["permissionDecisionReason"])
 
+    def run_hook_full(self, data):
+        return subprocess.run([sys.executable, str(ROOT / "cguard" / "hook.py")], input=json.dumps(data),
+                              capture_output=True, text=True, env=dict(os.environ), timeout=20)
+
+    def test_prompt_with_a_key_is_stopped(self):
+        key = "AKIA" + "Q7M2XK9LP4WN8RT1"
+        r = self.run_hook_full({"hook_event_name": "UserPromptSubmit", "cwd": TMP,
+                                "user_prompt": f"why does boto fail with {key}?"})
+        self.assertEqual(r.returncode, 2, r.stderr)
+        self.assertIn("rotate", r.stderr)
+        self.assertNotIn(key, r.stderr)
+        self.assertEqual(r.stdout.strip(), "")
+
+    def test_prompt_without_a_key_passes(self):
+        r = self.run_hook_full({"hook_event_name": "UserPromptSubmit", "cwd": TMP,
+                                "user_prompt": "rename getUser to fetchUser in the three call sites"})
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(r.stdout.strip(), "")
+
+    def test_prompt_in_ask_mode_adds_context(self):
+        cfg = config.load()
+        config.set_rule(cfg, "secrets.prompt", "ask")
+        config.save(cfg)
+        try:
+            r = self.run_hook_full({"hook_event_name": "UserPromptSubmit", "cwd": TMP,
+                                    "user_prompt": "token is " + "ghp_" + "Q7m2Xk9Lp4Wn8Rt1Vz5Bc3Dy6Fh0Jg2Km4Np"})
+            self.assertEqual(r.returncode, 0)
+            self.assertIn("rotated", r.stdout)
+        finally:
+            config.set_rule(cfg, "secrets.prompt", "deny")
+            config.save(cfg)
+
     def test_allowed_call_prints_nothing(self):
         out = self.run_hook({"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "ls -la"}, "cwd": TMP})
         self.assertEqual(out, "")

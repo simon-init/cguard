@@ -153,6 +153,22 @@ RULES = [
      "- A value read by a script rather than printed by the shell.\n\n"
      "If Claude needs to know whether a variable is set, it can test for that without printing the value."),
 
+    ("secrets.prompt", "Secrets", "Secrets pasted into the chat",
+     "Stop a message that holds a key before it is sent, and say to rotate it.",
+     "## How it works\n"
+     "Before a message you send reaches the model, the hook reads it with the same detectors as the file rule: the known key formats, and NAME=value lines with a random value. If it finds one, the message is stopped. Claude Code erases it, and it is never sent. You see one line that names the kind of key and says what to do.\n\n"
+     "## Why it exists\n"
+     "A key pasted into the chat by mistake travels to the model with every later request, and the transcript keeps it. The moment before it is sent is the only moment it is still private.\n\n"
+     "## Modes\n"
+     "- deny: the message is stopped and never sent.\n"
+     "- ask: the message goes through, and Claude is told to say that the key is now in the transcript and must be rotated.\n"
+     "- off: nothing is checked.\n\n"
+     "## What it does not catch\n"
+     "- A key inside a file you point Claude at. The file rule handles that when Claude reads it.\n"
+     "- A secret that reads as ordinary words.\n\n"
+     "## Safe alternative\n"
+     "Remove the key from the message and send it again. To show a key on purpose, set the rule to ask for that one message, and back to deny after:\n"
+     "cguard set secrets.prompt ask"),
     ("commit.secrets", "Commits", "Secrets in a commit",
      "Scan what git add or git commit is about to record and refuse it if a secret is in it.",
      "## How it works\n"
@@ -334,7 +350,7 @@ for _r in RULES:
 
 PROFILES = {
     "standard": {
-        "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny",
+        "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny", "secrets.prompt": "deny",
         "commit.secrets": "deny", "commit.binaries": "deny", "commit.add_all": "deny",
         "commit.no_verify": "deny", "commit.force_push": "ask",
         "commands.fatal": "deny", "commands.destructive": "ask", "commands.sudo": "ask",
@@ -344,7 +360,7 @@ PROFILES = {
         "session.check": "off",
     },
     "contained": {
-        "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny",
+        "secrets.files": "deny", "secrets.write": "deny", "secrets.env": "deny", "secrets.prompt": "deny",
         "commit.secrets": "deny", "commit.binaries": "deny", "commit.add_all": "deny",
         "commit.no_verify": "deny", "commit.force_push": "ask",
         "commands.fatal": "deny", "commands.destructive": "ask", "commands.sudo": "ask",

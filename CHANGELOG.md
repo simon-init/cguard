@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.37, 2026-09-27
+
+A new rule, secrets.prompt, on by default. When a message you send holds a key, the hook stops it before it reaches the model. Claude Code erases it, and you see one line that names the kind of key, says nothing left the machine, and says to rotate the key if it was pasted anywhere else. In ask mode the message goes through and Claude is told to say the key must be rotated. Eighteen rules.
+
 ## 0.1.36, 2026-09-27
 
 The description line is "Every blocked action comes with a safe alternative." The same words replace "way forward" in the manifests, the README, the welcome line of the settings screen, the setup screen, the why command and the rule descriptions, where the section is now called Safe alternative.

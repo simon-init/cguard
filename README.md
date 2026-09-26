@@ -15,6 +15,7 @@ the model. Only the decision does.
 | `secrets.files` | deny | Refuse to read, edit, grep or shell-touch a file whose content looks like a key or credential |
 | `secrets.write` | deny | Refuse to write a private key block into any file |
 | `secrets.env` | deny | When a variable name says it is a secret, refuse `env`, `printenv` and `echo $NAME` |
+| `secrets.prompt` | deny | Stop a message you send that holds a key, before it reaches the model, and say to rotate it |
 | `commit.secrets` | deny | Scan what `git add` and `git commit` are about to record. If a secret is in it, refuse |
 | `commit.binaries` | deny | Refuse `git add` of PDFs, office documents, archives, databases and files over 5 MB |
 | `commit.add_all` | deny | Refuse `git add -A` and `git add .`. Files are added by name |

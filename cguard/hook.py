@@ -10,7 +10,35 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cguard import audit, config, guards  # noqa: E402
+from cguard import audit, config, guards, patterns  # noqa: E402
+
+
+BLOCKED = ("cguard: your message holds {label} and was not sent. Claude Code erased it, and nothing left this machine.\n"
+           "Remove the key and send the message again. The key is still in your terminal history and your clipboard.\n"
+           "If it was pasted anywhere else, rotate it.\n"
+           "To show a key on purpose: cguard set secrets.prompt ask, then set it back to deny.")
+EXPOSED = ("cguard: the user's message holds {label}. The value is now in this transcript. In one line, tell the user "
+           "that this key is exposed in the transcript and must be rotated. Do not repeat the value. Then continue "
+           "with the task.")
+
+
+def prompt_check(data, cfg, cwd):
+    """A key pasted into the chat: stop the message (deny), or let it through and have Claude say
+    that the key must be rotated (ask)."""
+    mode = cfg["rules"].get("secrets.prompt", "deny")
+    if mode == "off":
+        return
+    text = data.get("user_prompt") or data.get("prompt") or ""
+    label = patterns.find_secret(text[:262144])
+    if not label:
+        return
+    if cfg["audit"]["decisions"]:
+        audit.record({"kind": "decision", "tool": "prompt", "rule": "secrets.prompt", "mode": mode,
+                      "what": f"a message that holds {label}", "cwd": cwd, "target": label})
+    if mode == "deny":
+        sys.stderr.write(BLOCKED.format(label=label) + "\n")
+        sys.exit(2)
+    print(EXPOSED.format(label=label))
 
 
 def main():
@@ -22,6 +50,9 @@ def main():
     cwd = data.get("cwd") or os.getcwd()
     try:
         cfg = config.load()
+        if event == "UserPromptSubmit":
+            prompt_check(data, cfg, cwd)
+            return
         if event == "SessionStart":
             note = guards.session_check(cwd, cfg)
             if not config.CONFIG_PATH.exists():

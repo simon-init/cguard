@@ -20,4 +20,4 @@ def main():
 if __name__ == "__main__":
     main()
 EOF
-printf 'STRIPE_SECRET_KEY=%s_%s_%s\nSHOP_URL=https://shop.example.com\n' sk live Qm7vTr2Xk9LpNz4Wd8Ys1Bh3Jc6Fg > .env
+printf 'STRIPE_SECRET_KEY=%s_%s_%s\nSHOP_NAME=shop-sync\n' sk live Qm7vTr2Xk9LpNz4Wd8Ys1Bh3Jc6Fg > .env

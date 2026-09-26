@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.35, 2026-09-27
+
+An icon for the directory listing. The eval fixtures no longer place a web address beside a fake key, which the directory's scanner read as a credential sent to a host.
+
 ## 0.1.34, 2026-09-26
 
 The README says what the plugin runs, sends and stores: one Python hook, two files under ~/.claude, no network calls.

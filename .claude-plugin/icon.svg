@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>cguard</title>
+  <rect width="256" height="256" rx="56" fill="#0b1220"/>
+  <path d="M128 36 L204 62 V126 C204 176 170 212 128 226 C86 212 52 176 52 126 V62 Z" fill="none" stroke="#22d3ee" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M160 108 A38 38 0 1 0 160 148" fill="none" stroke="#22d3ee" stroke-width="18" stroke-linecap="round"/>
+</svg>

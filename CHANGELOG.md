@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.21, 2026-09-26
+
+The selected row is coloured rather than highlighted, and About has a row of space below it.
+
 ## 0.1.20, 2026-09-26
 
 Known secret paths grows from 140 to 460 rules: developer tool tokens, commands that print a secret, more history files, keychains, browsers and messaging apps on macOS and Linux, and best-effort Windows paths.

@@ -20,7 +20,7 @@ C_ACCENT, C_DENY, C_ASK, C_OFF, C_DIM, C_SEL = 1, 2, 3, 4, 5, 6
 
 
 def _items():
-    out = [("about", "About cguard"), ("group", "Profile")]
+    out = [("about", "About cguard"), ("blank", ""), ("group", "Profile")]
     for name in config.PROFILES:
         out.append(("profile", name))
     out += [("blank", ""), ("group", "Files by name"), ("denylist", "Known secret paths")]
@@ -164,7 +164,7 @@ class Screen:
                 mode = self.cfg["rules"][value]
                 self.put(y, 3, f"[{mode:<4}]", self.mode_attr(mode))
                 name, desc, x = r["title"], r["short"], 10
-            attr = curses.A_BOLD | (self.pair(C_SEL) if selected else 0)
+            attr = self.pair(C_ACCENT, curses.A_BOLD) if selected else curses.A_BOLD
             self.put(y, x, _fit(name, w - x - 1), attr)
             x += len(name) + 2
             self.put(y, x, _fit(desc, w - x - 1), self.pair(C_DIM))

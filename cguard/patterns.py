@@ -10,7 +10,7 @@ import math
 import os
 import re
 
-HEAD_BYTES = 4096
+HEAD_BYTES = 65536          # per file: the whole file for almost every configuration or source file
 
 PREFIXED = [
     (re.compile(r"-----BEGIN [A-Z ]*PRIVATE " r"KEY"), "a private key"),
@@ -108,13 +108,17 @@ def find_secret(text):
     return None
 
 
-def classify_file(path):
-    """A label if the file at path looks like secret material, else None. Reads 4 KB at most."""
+def classify_file(path, limit=None):
+    """A label if the file at path looks like secret material, else None.
+
+    Reads the first `limit` bytes, HEAD_BYTES by default, so a whole configuration or source
+    file and only the head of anything large."""
+    limit = HEAD_BYTES if limit is None else max(0, min(limit, HEAD_BYTES))
     try:
-        if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        if limit == 0 or not os.path.isfile(path) or os.path.getsize(path) == 0:
             return None
         with open(path, "rb") as f:
-            head = f.read(HEAD_BYTES)
+            head = f.read(limit)
     except OSError:
         return None
     return find_secret(head.decode("utf-8", errors="replace"))

@@ -4,8 +4,8 @@ A Claude Code plugin that keeps secrets, stray documents and destructive command
 out of an assistant session. Every refusal comes with a way forward.
 
 It is one hook, written in Python with no dependencies, that runs before every Read,
-Edit, Write, Grep and Bash call. It reads at most the first 4 KB of a file the tool is
-about to touch, and the file content never reaches the model. Only the decision does.
+Edit, Write, Grep and Bash call. It reads the first 64 KB of a file the tool is about
+to touch, the whole file in almost every case, and the file content never reaches the model. Only the decision does.
 
 ## What it guards
 
@@ -119,7 +119,8 @@ configuration file.
 
 Say this plainly, because a guard that is trusted beyond what it does is worse than none.
 
-- It reads the first 4 KB of a file. A secret further down passes.
+- It reads the first 64 KB of a file, and no more than 4 MB per tool call. A secret further
+  down in a large file passes.
 - It reads shell commands as text. A path built by a subshell, an encoded argument, or a
   file read by a program that Claude wrote and then ran, is not seen.
 - It knows the formats of common keys and the shape of `KEY=value` lines. A secret that

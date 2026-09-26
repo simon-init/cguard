@@ -151,7 +151,7 @@ def main(argv=None):
             return cmd_check(cfg, " ".join(args))
         elif cmd == "check-file" and len(args) == 1:
             label = patterns.classify_file(os.path.abspath(os.path.expanduser(args[0])))
-            print(f"{args[0]}: {label or 'no secret material found in the first 4 KB'}")
+            print(f"{args[0]}: {label or 'no secret material found in the first 64 KB'}")
             return 1 if label else 0
         elif cmd == "config":
             from cguard import tui

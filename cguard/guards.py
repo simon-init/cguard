@@ -16,6 +16,21 @@ from . import config, patterns
 
 MAX_WALK = 500          # files scanned when a directory is added
 MAX_TOKENS = 200
+READ_BUDGET = 4 * 1024 * 1024   # bytes the hook will read per tool call, across every file it looks at
+_budget = {"left": READ_BUDGET}
+
+
+def _classify(path):
+    """patterns.classify_file within the per-call budget; None once the budget is spent."""
+    if _budget["left"] <= 0:
+        return None
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        return None
+    limit = min(patterns.HEAD_BYTES, _budget["left"])
+    _budget["left"] -= min(size, limit)
+    return patterns.classify_file(path, limit)
 
 
 @dataclass
@@ -227,7 +242,7 @@ def check_file_tools(tool, tool_input, cwd, cfg):
                 if d:
                     return d
             if not _allowed_path(cfg, candidate):
-                label = patterns.classify_file(candidate)
+                label = _classify(candidate)
                 if label:
                     d = _dec(cfg, "secrets.files",
                              f"{tool} on {candidate}, which contains {label}.",
@@ -415,7 +430,7 @@ def check_bash(command, cwd, cfg):
                                      f"`cguard allow commit_paths {os.path.relpath(f, repo_dir)}`")
                             if d:
                                 return d
-                        label = patterns.classify_file(f)
+                        label = _classify(f)
                         if label:
                             d = _dec(cfg, "commit.secrets", f"`git add` of {f}, which contains {label}.",
                                      "a secret in a commit is a secret in every clone, forever.",
@@ -522,7 +537,7 @@ def check_bash(command, cwd, cfg):
     for candidate in sorted(set(_path_tokens(command, cwd))):
         if _allowed_path(cfg, candidate):
             continue
-        label = patterns.classify_file(candidate)
+        label = _classify(candidate)
         if label:
             d = _dec(cfg, "secrets.files", f"this command touches {candidate}, which contains {label}.",
                      "secret material is never read by Claude; the content did not reach the model.",
@@ -542,6 +557,7 @@ def check_bash(command, cwd, cfg):
 
 def evaluate(data, cfg):
     """A Decision for this tool call, or None to let it through."""
+    _budget["left"] = READ_BUDGET
     tool = data.get("tool_name", "")
     tool_input = data.get("tool_input") or {}
     cwd = data.get("cwd") or os.getcwd()
@@ -556,6 +572,7 @@ def session_check(cwd, cfg):
     """One warning line for the session, or None."""
     if cfg["rules"].get("session.check") == "off":
         return None
+    _budget["left"] = READ_BUDGET
     problems = []
     gitignore = os.path.join(cwd, ".gitignore")
     if os.path.isdir(os.path.join(cwd, ".git")):
@@ -568,7 +585,7 @@ def session_check(cwd, cfg):
             problems.append(".env is not in .gitignore")
         tracked = _run_git(cwd, ["ls-files"]).splitlines()[:500]
         for f in tracked:
-            label = patterns.classify_file(os.path.join(cwd, f))
+            label = _classify(os.path.join(cwd, f))
             if label:
                 problems.append(f"tracked file {f} contains {label}")
                 break

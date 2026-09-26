@@ -94,6 +94,12 @@ class FileTools(unittest.TestCase):
     def test_plain_file_passes(self):
         self.assertIsNone(decide("Read", {"file_path": self.plain}, self.cwd))
 
+    def test_secret_deep_in_a_file_is_found_up_to_the_limit(self):
+        deep = write(Path(self.cwd) / "big.ini", "x = 1\n" * 3000 + f"token = {FAKE_ANTHROPIC}\n")   # about 18 KB in
+        self.assertEqual(decide("Read", {"file_path": deep}, self.cwd).rule, "secrets.files")
+        deeper = write(Path(self.cwd) / "huge.log", "line\n" * 20000 + f"token = {FAKE_ANTHROPIC}\n")   # about 100 KB in
+        self.assertIsNone(decide("Read", {"file_path": deeper}, self.cwd))
+
     def test_allowlisted_secret_file_passes(self):
         cfg = config.default_config("standard")
         config.add_to_list(cfg, "paths", self.secret)

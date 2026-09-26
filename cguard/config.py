@@ -44,21 +44,29 @@ Each rule is deny, ask or off.
 Two profiles set the defaults. Standard: Claude moves freely between folders. Contained: Claude stays inside the project and asks before installing anything.
 
 ## How secrets are found
-By content, not by file name. The hook reads at most the first 4 KB of a file.
+By content, not by file name. The hook reads the first 64 KB of a file, which is the whole file for almost every configuration or source file, and never more than 4 MB in one tool call.
 
 - {FORMATS} known key formats with a fixed shape: cloud, API and payment keys, private key blocks, connection strings, tokens.
 - NAME=value lines where the name says secret and the value looks random.
 
 ## What it cannot see
-- A secret past the first 4 KB.
+- A secret past the first 64 KB of a large file.
 - A format that is not on the list.
 - A secret that reads as ordinary words.
 - Anything a program does after Claude starts it.
 
 The deny list in Claude Code's own configuration, which blocks known file names, is the layer below this one. A real sandbox is the layer below that.
 
-## The log
-Every decision is written to a local file with secrets masked. Ask what happened with cguard audit, and why with cguard why."""
+## Where things are
+- Configuration: {CONFIG_PATH}. Edited by this screen and by the cguard command. Delete it to return to the standard profile with nothing changed.
+- Log: {AUDIT_PATH}. One line per decision: time, tool, rule, mode, what was blocked, with secrets masked. Local only.
+- Installed copy: under the Claude plugins folder. Updated with claude plugin update cguard@cguard.
+
+## Reading the log
+- cguard audit, the last 20 decisions. cguard audit 100 for more.
+- cguard why, the most recent refusal with its full explanation.
+- cguard show, the current profile, rule modes and allowlists.
+- Inside a session: /cguard:audit, /cguard:why, /cguard:config."""
 
 PROFILE_INFO = {
     "standard": ("Guards on, free to move between folders",
@@ -79,12 +87,12 @@ RULES = [
     ("secrets.files", "Secrets", "Files that hold secret material",
      "Refuse to read, edit, grep or shell-touch a file whose content looks like a key or credential.",
      f"## How it works\n"
-     f"Before a tool touches a file, the hook opens that file itself and reads the first 4 KB. It looks for two things.\n\n"
+     f"Before a tool touches a file, the hook opens that file itself and reads the first 64 KB, which is the whole file for almost every configuration or source file. Across one tool call it reads no more than 4 MB in total. It looks for two things.\n\n"
      f"- {FORMATS} known formats with a fixed shape: private key blocks, keys for the major clouds, AI providers, payment and messaging services, Google service account files, kubeconfig keys, connection strings and URLs that carry a password, bearer tokens and JSON web tokens.\n"
      f"- Any NAME=value or NAME: value line where NAME contains SECRET, TOKEN, PASSWORD, API_KEY, PRIVATE_KEY, ACCESS_KEY or CREDENTIAL, and the value is at least 12 characters and looks random.\n\n"
      f"Placeholders such as your_api_key_here, <fill in> or a run of the same character pass. The file content is read by the hook, never by the model.\n\n"
      f"## What it does not catch\n"
-     f"- A secret past the first 4 KB.\n"
+     f"- A secret past the first 64 KB of a large file.\n"
      f"- A format that is not on the list.\n"
      f"- A secret that reads as ordinary words.\n\n"
      f"The deny list in Claude Code's own configuration, which blocks known names such as .env and the SSH folder, stays in place underneath.\n\n"

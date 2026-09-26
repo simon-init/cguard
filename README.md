@@ -175,6 +175,17 @@ time, tool, rule, mode, what, and the target with any secret masked. It stays on
 machine. To log every shell command as well, turn on `audit.commands` in the
 configuration file.
 
+## What it runs, sends and stores
+
+- It runs one Python script, `cguard/hook.py`, before each file and shell tool call, and
+  once at session start. Nothing is installed and nothing runs in the background.
+- It stores two files under `~/.claude`: `cguard.json`, the configuration, and
+  `cguard.log`, the audit log. On your command, `cguard denylist install` adds deny rules
+  to `~/.claude/settings.json`, and nothing else touches that file.
+- It sends nothing anywhere. The hook makes no network calls. The one script that
+  reaches the internet is `tools/sync_gitleaks.py`. A developer runs it by hand to
+  refresh the imported key formats from GitHub, and it is not part of the hook.
+
 ## What it cannot see
 
 Say this plainly, because a guard that is trusted beyond what it does is worse than none.

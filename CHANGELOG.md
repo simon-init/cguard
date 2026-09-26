@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.34, 2026-09-26
+
+The README says what the plugin runs, sends and stores: one Python hook, two files under ~/.claude, no network calls.
+
 ## 0.1.33, 2026-09-26
 
 The pipe rule refuses a download only when the receiving command would run it: a shell or interpreter with no script of its own, directly or through sudo. A pipe into python3 -c, python3 -m json.tool, perl -ne, node -e, jq or a script file reads the download as data and passes. bash -c "$(curl ...)" and bash <(curl ...) are refused as well. The test file no longer holds a complete fake key, so the guard does not refuse to read it. cguard set self.protect off or ask from inside a session is refused, and setting it back to deny stays allowed.

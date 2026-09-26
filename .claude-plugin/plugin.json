@@ -1,0 +1,36 @@
+{
+  "name": "secret-guard",
+  "description": "Keeps secrets, other people's documents and destructive commands out of a Claude Code session. Every refusal comes with a way forward.",
+  "version": "0.1.0",
+  "author": { "name": "Simon Ertushi" },
+  "homepage": "https://github.com/simon-init/secret-guard",
+  "repository": "https://github.com/simon-init/secret-guard",
+  "license": "MIT",
+  "keywords": ["security", "secrets", "guardrails", "hooks", "git", "privacy"],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit|Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/secret_guard/hook.py\"",
+            "timeout": 15,
+            "statusMessage": "secret-guard"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/secret_guard/hook.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

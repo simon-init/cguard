@@ -1,0 +1,12 @@
+{
+  "name": "secret-guard",
+  "owner": { "name": "Simon Ertushi" },
+  "plugins": [
+    {
+      "name": "secret-guard",
+      "source": "./",
+      "description": "Keeps secrets, other people's documents and destructive commands out of a Claude Code session. Every refusal comes with a way forward.",
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.49, 2026-09-27
+
+The setup screen shows a progress strip under the header on every step: the five step names in a row, the done ones ticked in green, the current one marked in the accent colour, the rest dim. On a narrow terminal the names shorten, and on a very narrow one the strip is five marks and a count.
+
 ## 0.1.48, 2026-09-27
 
 The privacy page in plainer sentences.

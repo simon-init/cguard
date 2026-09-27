@@ -235,6 +235,22 @@ class Wizard:
             right = f"step {self.step} of {len(STEPS) - 1}"
             self.put(0, max(22, w - len(right) - 2), right, self.pair(C_SEL, curses.A_BOLD))
 
+    def steps_row(self, y, w):
+        """All five steps in a row: done ones ticked, the current one marked, the rest dim.
+        Narrow terminals get short names, and very narrow ones the marks and a count."""
+        names = STEPS[1:]
+        labels = list(names) if w >= 92 else ["Profile", "Paths", "Computers", "Commands", "Done"] if w >= 64 else None
+        x = 3
+        for i, _name in enumerate(names, 1):
+            done, now = i < self.step, i == self.step
+            mark = "✓" if done else "▶" if now else "○"
+            attr = self.pair(C_OFF, curses.A_BOLD) if done else self.pair(C_ACCENT, curses.A_BOLD) if now else self.pair(C_DIM)
+            text = f"{mark} {labels[i - 1]}" if labels else mark
+            self.put(y, x, text, attr)
+            x += len(text) + (3 if labels else 1)
+        if not labels and self.step:
+            self.put(y, x + 1, f"step {self.step} of {len(names)}", self.pair(C_DIM))
+
     def footer(self, h, w):
         rows = _footer_rows(HELP, w)
         for i, row in enumerate(rows):
@@ -269,7 +285,11 @@ class Wizard:
                 y += 1
             self.put(y, 3, _fit(TAGLINE, w - 4), curses.A_BOLD)
             y += 2
+            self.steps_row(y, w)
+            y += 2
         else:
+            self.steps_row(y, w)
+            y += 2
             self.put(y, 3, _fit(STEPS[self.step], w - 4), self.pair(C_ACCENT, curses.A_BOLD))
             self.put(y + 1, 3, "─" * width, self.pair(C_DIM))
             y += 2

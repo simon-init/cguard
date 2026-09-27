@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.46, 2026-09-27
+
+The texts describe the permission dialog as it is: Yes or No, with the reason shown, and No ends the tool call so you can type what to do instead. There is no third button.
+
 ## 0.1.45, 2026-09-27
 
 A test workflow on GitHub Actions runs the unit tests on every push, on Linux with Python 3.9 and 3.12 and on macOS with 3.12, with a badge in the README. The README's opening paragraph covers the message check, the note on ask says what it means for that rule, and the list of what the guard cannot see names the bare random string.

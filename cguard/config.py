@@ -28,7 +28,7 @@ One hook. Claude Code runs it before every Read, Edit, Write, Grep and shell com
 The hook looks at the call and answers in one of three ways.
 
 - Nothing: the call goes through.
-- Ask: Claude Code opens its permission dialog, Yes, No and "tell Claude what to do differently", with cguard's reason shown in it. It appears even when permission prompts are switched off.
+- Ask: Claude Code opens its permission dialog, Yes or No, with cguard's reason shown in it. No ends the tool call, and you type what to do instead. It appears even when permission prompts are switched off.
 - Deny: the call is refused, and Claude relays the reason to you.
 
 The model sees only the decision and its reason, never the content the hook looked at.

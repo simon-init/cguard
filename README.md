@@ -34,8 +34,8 @@ is stopped before it is sent, and Claude Code erases it.
 | `packages.install` | off | Confirm before pip, npm, npx, cargo, brew, pacman and apt installs. Ask on the contained profile |
 | `session.check` | off | If `.env` is not ignored, or a tracked file holds a secret, warn once per session |
 
-An `ask` opens Claude Code's own permission dialog, Yes, No and "tell Claude what to do
-differently", with the reason shown in it. A hook's answer is honoured in every permission
+An `ask` opens Claude Code's own permission dialog, Yes or No, with the reason shown in
+it. No ends the tool call, and you type what to do instead. A hook's answer is honoured in every permission
 mode. With permission prompts switched off, the dialog still appears. The message check
 is the one exception: there, `ask` lets the message through and tells Claude to say that
 the key is now in the transcript and must be rotated.

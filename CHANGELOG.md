@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.52, 2026-09-27
+
+The README's first sentence says agent sessions.
+
 ## 0.1.51, 2026-09-27
 
 The README's first sentence says an agent session. Three rule descriptions say Claude, or a Claude Code session, where they said an assistant.

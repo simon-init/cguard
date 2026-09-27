@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.53, 2026-09-28
+
+A stopped message names the line by its own first words as well as by number, with the secret cut out, so there is nothing to count. Counting from the pasted text's first line was right, and still read wrong next to the wrapper Claude Code shows.
+
 ## 0.1.52, 2026-09-27
 
 The README's first sentence says agent sessions.

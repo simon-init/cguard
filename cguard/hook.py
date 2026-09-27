@@ -13,8 +13,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cguard import audit, config, guards, patterns  # noqa: E402
 
 
-BLOCKED = ("cguard: your message holds {label}{where} and was not sent. Claude Code erased it, and nothing left this machine.\n"
-           "Remove the key and send the message again. The key is still in your terminal history and your clipboard.\n"
+BLOCKED = ("cguard: your message holds {label} and was not sent. Claude Code erased it, and nothing left this machine.\n"
+           "Where: {where}\n"
+           "Remove the key from that line and send the message again. The key is still in your terminal history and your clipboard.\n"
            "If it was pasted anywhere else, rotate it.\n"
            "To show a key on purpose: cguard set secrets.prompt ask, then set it back to deny.")
 EXPOSED = ("cguard: the user's message holds {label}. The value is now in this transcript. In one line, tell the user "
@@ -22,17 +23,31 @@ EXPOSED = ("cguard: the user's message holds {label}. The value is now in this t
            "with the task.")
 
 
+def _excerpt(line, limit=56):
+    """The start of the line with every secret cut out, so the user recognises the line
+    without seeing the value again."""
+    text = line
+    for pattern, _label in patterns.PREFIXED:
+        text = pattern.sub("[secret]", text)
+    for pattern, _rid, _minimum, _group in patterns.GITLEAKS:
+        text = pattern.sub("[secret]", text)
+    for m in reversed(list(patterns.GENERIC.finditer(text))):
+        text = text[:m.start(2)] + "[secret]" + text[m.end(2):]
+    text = text.strip()
+    return text if len(text) <= limit else text[:limit].rstrip() + "…"
+
+
 def _where(text):
-    """The line the secret is on. Inside a pasted block, counted from the block's first line,
-    because that is the text the user is looking at; the wrapper Claude Code adds is not."""
+    """The line the secret is on, by number and by its own first words. Inside a pasted block
+    the number counts from the block's first line, because that is the text the user pasted;
+    the wrapper Claude Code adds around a paste is not."""
     lines = text.splitlines()
     hit = next((i for i, one in enumerate(lines) if patterns.find_secret(one)), None)
     if hit is None:
-        return ""
+        return "in the message"
     opening = next((j for j in range(hit, -1, -1) if lines[j].lstrip().startswith("<pasted_content")), None)
-    if opening is not None:
-        return f" on line {hit - opening} of the pasted text"
-    return f" on line {hit + 1}"
+    number = f"line {hit - opening} of the pasted text" if opening is not None else f"line {hit + 1}"
+    return f"{number}, the one that starts `{_excerpt(lines[hit])}`"
 
 
 def prompt_check(data, cfg, cwd):

@@ -375,11 +375,13 @@ class HookProcess(unittest.TestCase):
         out = json.loads(r.stdout)
         self.assertEqual(out["decision"], "block")
         self.assertIn("rotate", out["reason"])
-        self.assertIn("on line 3", out["reason"])
+        self.assertIn("line 3, the one that starts `why does boto fail with [secret]", out["reason"])
         self.assertNotIn(key, r.stdout)
         pasted = f'\n\n<pasted_content id="1a2b">\ndumped pgamx\nchecking\nconnected\ntoken={key}\n</pasted_content id="1a2b">'
         r = self.run_hook_full({"hook_event_name": "UserPromptSubmit", "cwd": TMP, "user_prompt": pasted})
-        self.assertIn("on line 4 of the pasted text", json.loads(r.stdout)["reason"])
+        reason = json.loads(r.stdout)["reason"]
+        self.assertIn("line 4 of the pasted text, the one that starts `token=[secret]`", reason)
+        self.assertNotIn(key, reason)
 
     def test_prompt_without_a_key_passes(self):
         r = self.run_hook_full({"hook_event_name": "UserPromptSubmit", "cwd": TMP,

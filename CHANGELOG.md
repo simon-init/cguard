@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.55, 2026-09-28
+
+The TRUNCATE pattern in the destructive-commands rule matched the CSS class truncate followed by any word, so a script that edited a styled React file asked for confirmation. It now matches TRUNCATE in capitals, as SQL is written, or the full lower-case form truncate table.
+
 ## 0.1.54, 2026-09-28
 
 A security policy in SECURITY.md, a Dependabot configuration for the workflow's actions, and the two actions pinned to commit hashes. Every NAME=value literal in the test file is split inside its name, so no detector reads the file as secret material; the runtime values are unchanged. These are the five findings of the awesome-ai-plugins catalog's scanner.

@@ -191,8 +191,13 @@ class BashCommands(unittest.TestCase):
             self.assertIsNotNone(d, cmd)
             self.assertEqual((d.rule, d.mode), ("commands.destructive", "ask"), cmd)
         for cmd in ("kubectl get pods", "kubectl delete pod web-1", "terraform plan", "docker compose down",
-                    "aws s3 ls s3://bucket", "prisma migrate dev", "helm list"):
+                    "aws s3 ls s3://bucket", "prisma migrate dev", "helm list",
+                    'python3 - <<EOF\nt = t.replace("flex-1 truncate text-left", "truncate font-medium")\nEOF'):
             self.assertIsNone(self.bash(cmd), cmd)
+        for cmd in ("psql -c 'TRUNCATE users'", "psql -c 'truncate table users'", "mysql -e 'TRUNCATE TABLE orders'"):
+            d = self.bash(cmd)
+            self.assertIsNotNone(d, cmd)
+            self.assertEqual(d.rule, "commands.destructive", cmd)
 
     def test_reading_a_protected_file_with_a_stray_redirect_is_fine(self):
         settings = os.environ["CGUARD_SETTINGS"]

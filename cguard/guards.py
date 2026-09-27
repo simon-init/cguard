@@ -287,7 +287,8 @@ DESTRUCTIVE_RE = [
     (re.compile(r"\bdocker\s+(system|volume|image|container)\s+prune\b"), "docker prune deletes images, volumes or containers"),
     (re.compile(r"\bdocker\s+run\b[^|;&]*(--privileged|/var/run/docker\.sock)"), "this container gets full control of the host"),
     (re.compile(r"(?i)\bDROP\s+(TABLE|DATABASE|SCHEMA)\b"), "DROP deletes a table or database"),
-    (re.compile(r"(?i)\bTRUNCATE\s+(TABLE\s+)?\w"), "TRUNCATE empties a table"),
+    # Upper case as SQL is written, or the full lower-case form: `truncate` alone is a CSS class.
+    (re.compile(r"\bTRUNCATE\s+(TABLE\s+)?\w|(?i:\btruncate\s+table\s+\w)"), "TRUNCATE empties a table"),
     (re.compile(r"\bkill\s+-9\s+-1\b"), "kill -9 -1 kills every process you own"),
     (re.compile(r"\bterraform\b[^|;&]*\b(destroy|state\s+rm)\b"), "terraform destroy tears down real infrastructure"),
     (re.compile(r"\bkubectl\s+delete\b(?:\s+(?:namespace|ns)\b|[^|;&]*\s(?:--all|--all-namespaces|-A|-f)\b)"),

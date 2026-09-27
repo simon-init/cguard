@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.51, 2026-09-27
+
+The README's first sentence says an agent session. Three rule descriptions say Claude, or a Claude Code session, where they said an assistant.
+
 ## 0.1.50, 2026-09-27
 
 The setup screen scrolls. The text and the answers are one region above the status line and the footer, the selected answer stays in view, the arrows scroll the text at either end of the answers, Page Up and Page Down scroll a screen, and a mark says when there is more above or below. Before, a short terminal hid the last answers under the footer. Each remove line on the trusted-computers step says what it does: copies to that computer ask again.

@@ -22,7 +22,7 @@ LOGO = [
     "        |___/",
 ]
 STEPS = ["Welcome", "Profile", "Known secret paths", "Computers you trust", "Commands", "Done"]
-HELP = [("↑↓ up/down", "move"), ("enter", "select"), ("← left", "back"), ("q", "quit")]
+HELP = [("↑↓ up/down", "move / scroll"), ("enter", "select"), ("← left", "back"), ("q", "quit")]
 
 WELCOME = (
     "cguard is a hook inside Claude Code. It runs before every file and shell command that Claude wants to use. "
@@ -78,6 +78,9 @@ class Wizard:
         self.added = None      # rules added to the known secret paths in this run
         self.saved_to = None
         self.repaint = True    # a full repaint on the next draw, set whenever the layout changes
+        self.scroll = 0        # first visible row of the body-and-answers region
+        self.follow = True     # bring the selected answer into view on the next draw
+        self.visible = 10      # rows the region had at the last draw, for Page Up and Page Down
         show_cursor(False)
         self.colors = init_colors()
 
@@ -133,7 +136,7 @@ class Wizard:
                     "command, for example my-server.example.com or 10.0.0.5.\n\n"
                     "## Trusted now\n" + (", ".join(self.hosts()) if self.hosts() else "none"))
             options = [("Continue", "", self.next), ("Add a computer", "", self.add_host)]
-            options += [(f"Remove {h}", "", lambda h=h: self.remove_host(h)) for h in self.hosts()]
+            options += [(f"Remove {h}", "copies to it ask again", lambda h=h: self.remove_host(h)) for h in self.hosts()]
             return text, options
         if self.step == 4:
             return COMMANDS, [("Continue", "", self.next)]
@@ -153,6 +156,7 @@ class Wizard:
         self.cursor = 0
         self.message = ""
         self.repaint = True
+        self.scroll, self.follow = 0, True
         if self.step == 1:
             self.cursor = list(config.PROFILES).index(self.cfg["profile"])
         if self.step == len(STEPS) - 1:
@@ -164,6 +168,7 @@ class Wizard:
             self.cursor = 0
             self.message = ""
             self.repaint = True
+            self.scroll, self.follow = 0, True
 
     def quit(self):
         return "quit"
@@ -294,30 +299,51 @@ class Wizard:
             self.put(y + 1, 3, "─" * width, self.pair(C_DIM))
             y += 2
         body, options = self.content()
-        for style, line in wrap_markup(body, width):
-            if style == "header":
-                self.put(y, 3, line, self.pair(C_ACCENT, curses.A_BOLD))
-            elif style == "bullet":
-                self.put(y, 5, line)
-            else:
-                self.put(y, 3, line)
-            y += 1
-        y += 1
         self.cursor = max(0, min(self.cursor, len(options) - 1))
-        for i, (label, hint, _) in enumerate(options):
-            selected = i == self.cursor
-            self.put(y, 1, "▶ " if selected else "  ", curses.A_BOLD)
-            x = 3
-            if self.step == 1:
-                active = label == self.cfg["profile"]
-                self.put(y, x, "● " if active else "○ ", self.pair(C_OFF if active else C_DIM, curses.A_BOLD))
-                x += 2
-            self.put(y, x, _fit(label, w - x - 1), self.pair(C_ACCENT, curses.A_BOLD) if selected else curses.A_BOLD)
-            x += len(label) + 2
-            if hint:
-                self.put(y, x, _fit(hint, w - x - 1), self.pair(C_DIM))
+        rows = [("text", style, line) for style, line in wrap_markup(body, width)] + [("text", "plain", "")]
+        first_answer = len(rows)
+        rows += [("answer", i, opt) for i, opt in enumerate(options)]
+        bottom = len(_footer_rows(HELP, w)) + 1          # footer rows plus the status line
+        self.visible = max(1, h - y - bottom - 1)
+        answer_row = first_answer + self.cursor
+        if self.follow:
+            if answer_row < self.scroll:
+                self.scroll = answer_row
+            elif answer_row >= self.scroll + self.visible:
+                self.scroll = answer_row - self.visible + 1
+            self.follow = False
+        self.scroll = max(0, min(self.scroll, max(0, len(rows) - self.visible)))
+        top = y
+        for row in rows[self.scroll:self.scroll + self.visible]:
+            if row[0] == "text":
+                _kind, style, line = row
+                if style == "header":
+                    self.put(y, 3, line, self.pair(C_ACCENT, curses.A_BOLD))
+                elif style == "bullet":
+                    self.put(y, 5, line)
+                else:
+                    self.put(y, 3, line)
+            else:
+                _kind, i, (label, hint, _action) = row
+                selected = i == self.cursor
+                self.put(y, 1, "▶ " if selected else "  ", curses.A_BOLD)
+                x = 3
+                if self.step == 1:
+                    active = label == self.cfg["profile"]
+                    self.put(y, x, "● " if active else "○ ", self.pair(C_OFF if active else C_DIM, curses.A_BOLD))
+                    x += 2
+                self.put(y, x, _fit(label, w - x - 1), self.pair(C_ACCENT, curses.A_BOLD) if selected else curses.A_BOLD)
+                x += len(label) + 2
+                if hint:
+                    self.put(y, x, _fit(hint, w - x - 1), self.pair(C_DIM))
             y += 1
         self.footer(h, w)
+        # The marks sit on the rule line above the region and on the status line below it,
+        # so they never cover the text or an answer.
+        if self.scroll > 0:
+            self.put(top - 1, max(3, w - 14), " ↑ more above", self.pair(C_DIM))
+        if self.scroll + self.visible < len(rows):
+            self.put(h - bottom, max(3, w - 14), " ↓ more below", self.pair(C_DIM))
         self.scr.refresh()
 
     def loop(self):
@@ -330,9 +356,19 @@ class Wizard:
                 if self.confirm_quit():
                     return
             elif key in (curses.KEY_UP, ord("k")):
-                self.cursor -= 1
+                if self.cursor > 0:
+                    self.cursor, self.follow = self.cursor - 1, True
+                else:
+                    self.scroll -= 1
             elif key in (curses.KEY_DOWN, ord("j")):
-                self.cursor += 1
+                if self.cursor < len(self.content()[1]) - 1:
+                    self.cursor, self.follow = self.cursor + 1, True
+                else:
+                    self.scroll += 1
+            elif key == curses.KEY_PPAGE:
+                self.scroll -= max(1, self.visible - 2)
+            elif key == curses.KEY_NPAGE:
+                self.scroll += max(1, self.visible - 2)
             elif key in (curses.KEY_LEFT, curses.KEY_BACKSPACE, 127, 8, ord("h")):
                 self.back()
             elif key in (curses.KEY_ENTER, 10, 13, ord(" ")):

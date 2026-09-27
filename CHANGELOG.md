@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.50, 2026-09-27
+
+The setup screen scrolls. The text and the answers are one region above the status line and the footer, the selected answer stays in view, the arrows scroll the text at either end of the answers, Page Up and Page Down scroll a screen, and a mark says when there is more above or below. Before, a short terminal hid the last answers under the footer. Each remove line on the trusted-computers step says what it does: copies to that computer ask again.
+
 ## 0.1.49, 2026-09-27
 
 The setup screen shows a progress strip under the header on every step: the five step names in a row, the done ones ticked in green, the current one marked in the accent colour, the rest dim. On a narrow terminal the names shorten, and on a very narrow one the strip is five marks and a count.

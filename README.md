@@ -1,12 +1,15 @@
 # cguard
 
+![tests](https://github.com/simon-init/cguard/actions/workflows/tests.yml/badge.svg)
+
 A Claude Code plugin that keeps secrets, stray documents and destructive commands
 out of an assistant session. Every blocked action comes with a safe alternative.
 
 It is one hook, written in Python with no dependencies, that runs before every Read,
-Edit, Write, Grep and Bash call. It reads the first 64 KB of a file the tool is about
-to touch, which is the whole file in almost every case. The file content never reaches
-the model. Only the decision does.
+Edit, Write, Grep and Bash call, and on every message you send. It reads the first 64 KB
+of a file the tool is about to touch, which is the whole file in almost every case. The
+file content never reaches the model. Only the decision does. A message that holds a key
+is stopped before it is sent, and Claude Code erases it.
 
 ## What it guards
 
@@ -33,7 +36,9 @@ the model. Only the decision does.
 
 An `ask` opens Claude Code's own permission dialog, Yes, No and "tell Claude what to do
 differently", with the reason shown in it. A hook's answer is honoured in every permission
-mode. With permission prompts switched off, the dialog still appears.
+mode. With permission prompts switched off, the dialog still appears. The message check
+is the one exception: there, `ask` lets the message through and tells Claude to say that
+the key is now in the transcript and must be rotated.
 
 ## Known secret paths
 
@@ -195,8 +200,9 @@ Say this plainly, because a guard that is trusted beyond what it does is worse t
   down in a large file passes.
 - It reads shell commands as text. A path built by a subshell, an encoded argument, or a
   file read by a program that Claude wrote and then ran, is not seen.
-- It knows the formats of common keys and the shape of `KEY=value` lines. A secret that
-  looks like ordinary text passes.
+- It knows the formats of common keys and the shape of `KEY=value` pairs. A secret that
+  looks like ordinary text passes. So does a bare random string with no name in front of
+  it and no known prefix, in a file or in a message.
 - It is a hook inside Claude Code. It does not sandbox anything. A model that is
   determined to misbehave has other routes. The deny list in `settings.json` and a real
   sandbox are the layers below this one.

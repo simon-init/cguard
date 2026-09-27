@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.45, 2026-09-27
+
+A test workflow on GitHub Actions runs the unit tests on every push, on Linux with Python 3.9 and 3.12 and on macOS with 3.12, with a badge in the README. The README's opening paragraph covers the message check, the note on ask says what it means for that rule, and the list of what the guard cannot see names the bare random string.
+
 ## 0.1.44, 2026-09-27
 
 When the secret sits inside a pasted block, the guard counts the line from the block's first line and says "of the pasted text", because Claude Code wraps a paste and adds lines in front of it that the user never sees.

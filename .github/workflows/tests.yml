@@ -1,0 +1,26 @@
+name: tests
+
+on:
+  push:
+    branches: [master, release]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, python: "3.9" }
+          - { os: ubuntu-latest, python: "3.12" }
+          - { os: macos-latest, python: "3.12" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: git identity for the commit-gate tests
+        run: git config --global user.email ci@example.com && git config --global user.name ci
+      - name: unit tests
+        run: python -m unittest discover -s tests -v

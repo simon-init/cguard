@@ -1,11 +1,12 @@
 {
   "name": "cguard",
   "description": "Keeps secrets, stray documents and destructive commands out of a Claude Code session. Every blocked action comes with a safe alternative.",
-  "version": "0.1.46",
+  "version": "0.1.47",
   "author": { "name": "simon-init" },
   "homepage": "https://github.com/simon-init/cguard",
   "repository": "https://github.com/simon-init/cguard",
   "license": "MIT",
+  "privacyPolicyUrl": "https://github.com/simon-init/cguard/blob/master/PRIVACY.md",
   "keywords": ["security", "secrets", "guardrails", "hooks", "git", "privacy"],
   "hooks": {
     "PreToolUse": [

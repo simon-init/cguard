@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.47, 2026-09-27
+
+A privacy page, PRIVACY.md, linked from the README and named in the manifest as privacyPolicyUrl. It says what the hook reads, what it keeps and what it sends, which is nothing.
+
 ## 0.1.46, 2026-09-27
 
 The texts describe the permission dialog as it is: Yes or No, with the reason shown, and No ends the tool call so you can type what to do instead. There is no third button.

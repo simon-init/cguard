@@ -229,6 +229,11 @@ claude plugin eval . --scaffold
 There is no eval case for the commit gate. The eval sandbox masks the git binary as a
 credential path, so no run can make a commit, with or without the plugin.
 
+## Privacy
+
+The hook runs on your machine and sends nothing anywhere. [PRIVACY.md](PRIVACY.md) says what
+it reads, what it keeps and what it sends, in one page.
+
 ## License
 
 MIT.

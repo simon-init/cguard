@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.44, 2026-09-27
+
+When the secret sits inside a pasted block, the guard counts the line from the block's first line and says "of the pasted text", because Claude Code wraps a paste and adds lines in front of it that the user never sees.
+
 ## 0.1.43, 2026-09-27
 
 The message block is stated in both places the hook documentation describes, at the top level of the JSON and inside hookSpecificOutput, so it holds whichever form Claude Code reads.

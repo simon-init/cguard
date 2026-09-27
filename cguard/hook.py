@@ -22,6 +22,19 @@ EXPOSED = ("cguard: the user's message holds {label}. The value is now in this t
            "with the task.")
 
 
+def _where(text):
+    """The line the secret is on. Inside a pasted block, counted from the block's first line,
+    because that is the text the user is looking at; the wrapper Claude Code adds is not."""
+    lines = text.splitlines()
+    hit = next((i for i, one in enumerate(lines) if patterns.find_secret(one)), None)
+    if hit is None:
+        return ""
+    opening = next((j for j in range(hit, -1, -1) if lines[j].lstrip().startswith("<pasted_content")), None)
+    if opening is not None:
+        return f" on line {hit - opening} of the pasted text"
+    return f" on line {hit + 1}"
+
+
 def prompt_check(data, cfg, cwd):
     """A key pasted into the chat: stop the message (deny), or let it through and have Claude say
     that the key must be rotated (ask)."""
@@ -36,8 +49,7 @@ def prompt_check(data, cfg, cwd):
         audit.record({"kind": "decision", "tool": "prompt", "rule": "secrets.prompt", "mode": mode,
                       "what": f"a message that holds {label}", "cwd": cwd, "target": label})
     if mode == "deny":
-        line = next((i for i, one in enumerate(text.splitlines(), 1) if patterns.find_secret(one)), None)
-        where = f" on line {line}" if line else ""
+        where = _where(text)
         # As JSON with exit 0, not as exit code 2: the manifest runs `python3 ... || python ...`
         # for Windows, and a non-zero exit from the first would start the fallback and turn
         # the block into a pass.

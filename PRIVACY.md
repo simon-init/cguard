@@ -7,8 +7,8 @@ sends, so that the answer to "where does my data go" is short: nowhere.
 ## What it reads
 
 - The first 64 KB of a file that Claude is about to read, edit, search or touch from a
-  shell command, to look for secret material. The content is read by the hook process
-  and discarded when the check is done.
+  shell command, to look for secret material. When the check is done, the hook process
+  discards the content.
 - The text of a shell command Claude is about to run.
 - The text of a message you send to Claude, before it is sent, to look for a pasted key.
 - The staged changes of a commit Claude is about to make.
@@ -35,17 +35,17 @@ anywhere else.
 ## What it sends
 
 Nothing. The hook makes no network calls. It contacts no service, no telemetry endpoint
-and no update server. The one script in the repository that reaches the internet,
-`tools/sync_gitleaks.py`, fetches a public rule file from GitHub, is run by hand by a
-developer of the plugin, and is not part of the hook.
+and no update server. The one script in the repository that reaches the internet is
+`tools/sync_gitleaks.py`. It fetches a public rule file from GitHub. A developer of the
+plugin runs it by hand, and it is not part of the hook.
 
 ## Personal data
 
-The hook does not look for personal data and does not store it. A file it scans may
-contain personal data, as any file may. The hook reads it only to find secrets and keeps
+The hook does not look for personal data and does not store it. A file it scans can
+contain personal data, as any file can. The hook reads it only to find secrets and keeps
 none of it.
 
 ## Changes
 
-This page changes when the plugin's behaviour changes, and the change log names the
-version. Questions go to the repository's issues.
+When the plugin's behaviour changes, this page changes with it, and the change log
+names the version. Questions go to the repository's issues.

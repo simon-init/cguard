@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.48, 2026-09-27
+
+The privacy page in plainer sentences.
+
 ## 0.1.47, 2026-09-27
 
 A privacy page, PRIVACY.md, linked from the README and named in the manifest as privacyPolicyUrl. It says what the hook reads, what it keeps and what it sends, which is nothing.

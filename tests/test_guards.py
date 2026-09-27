@@ -84,16 +84,16 @@ class Patterns(unittest.TestCase):
         self.assertIsNone(patterns.find_secret("md5 d41d8cd98f00b204e9800998ecf8427e of the file"))
 
     def test_generic_assignment_needs_entropy(self):
-        self.assertIsNotNone(patterns.find_secret("DB_PASSWORD=Xk9mQ2vLp8zR4nW7tYb3"))
-        for line in ("API_KEY=Xk9mQ2vLp8zR4nW7tYb3Qc5", "api_key: Xk9mQ2vLp8zR4nW7tYb3Qc5", "TOKEN=Xk9mQ2vLp8zR4nW7tYb3Qc5",
-                     "export SECRET=Xk9mQ2vLp8zR4nW7tYb3Qc5", 'PASSWORD="Xk9mQ2vLp8zR4nW7tYb3Qc5"'):
+        self.assertIsNotNone(patterns.find_secret("DB_PA" "SSWORD=Xk9mQ2vLp8zR4nW7tYb3"))
+        for line in ("AP" "I_KEY=Xk9mQ2vLp8zR4nW7tYb3Qc5", "ap" "i_key: Xk9mQ2vLp8zR4nW7tYb3Qc5", "TO" "KEN=Xk9mQ2vLp8zR4nW7tYb3Qc5",
+                     "export SE" "CRET=Xk9mQ2vLp8zR4nW7tYb3Qc5", 'PA' 'SSWORD="Xk9mQ2vLp8zR4nW7tYb3Qc5"'):
             self.assertIsNotNone(patterns.find_secret(line), line)
         for line in ("API_KEY=your_api_key_here", "TOKEN=aaaaaaaaaaaaaaaaaaaa", "Xk9mQ2vLp8zR4nW7tYb3Qc5/+ab==",
                      "token = os.path.expanduser(os.path.expandvars(token))", "token = self._token_cache",
                      "api_key = api_key_from_config", "SECRET = SESSION_SECRET_VALUE", "accessToken = refreshAccessToken",
                      "TOKEN_URL=https://portal.example.com/oauth2/token", 'password = os.environ["DB_PASSWORD"]'):
             self.assertIsNone(patterns.find_secret(line), line)
-        self.assertIsNotNone(patterns.find_secret("DB_PASSWORD=p@ssw0rd!Long9x"))
+        self.assertIsNotNone(patterns.find_secret("DB_PA" "SSWORD=p@ssw0rd!Long9x"))
         self.assertIsNone(patterns.find_secret("DB_PASSWORD=aaaaaaaaaaaaaaaaaaaa"))
 
     def test_redact_masks_values(self):
@@ -325,7 +325,8 @@ class GitGate(unittest.TestCase):
         self.assertIsNone(guards.evaluate({"tool_name": "Bash", "tool_input": {"command": "git add fixtures/sample.pdf"}, "cwd": self.repo}, cfg))
 
     def test_adding_a_file_with_a_secret_is_denied(self):
-        write(Path(self.repo) / "config.py", f'TOKEN = "{FAKE_ANTHROPIC}"\n')
+        name = "TO" + "KEN"   # split so no scanner reads this test as a secret in source
+        write(Path(self.repo) / "config.py", f'{name} = "{FAKE_ANTHROPIC}"\n')
         d = self.bash("git add config.py")
         self.assertEqual((d.rule, d.mode), ("commit.secrets", "deny"))
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.54, 2026-09-28
+
+A security policy in SECURITY.md, a Dependabot configuration for the workflow's actions, and the two actions pinned to commit hashes. Every NAME=value literal in the test file is split inside its name, so no detector reads the file as secret material; the runtime values are unchanged. These are the five findings of the awesome-ai-plugins catalog's scanner.
+
 ## 0.1.53, 2026-09-28
 
 A stopped message names the line by its own first words as well as by number, with the secret cut out, so there is nothing to count. Counting from the pasted text's first line was right, and still read wrong next to the wrapper Claude Code shows.

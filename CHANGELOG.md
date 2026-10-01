@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.58, 2026-10-01
+
+The icon is Simon's shield as drawn: two lines with a white band between them, a peaked top, straight sides and a curved point at the bottom, with the letters Cg in green inside. The two lines are rebuilt as exact geometry with sharp joins, fitted to the original's measurements; the letters are the original outlines. On a white square.
+
 ## 0.1.57, 2026-10-01
 
 Dependabot opens its pull requests against master, where all work lands, instead of the default branch release. The two action updates it already merged on release, checkout 7 and setup-python 7, are folded into master.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.62, 2026-10-01
+
+The outer line's point comes up and its curve follows the inner line, so the rim is a little wider at the bottom than at the sides instead of a wedge. A thin bright edge just inside the outer line, lit from the upper left, gives the rim a bevel.
+
 ## 0.1.61, 2026-10-01
 
 The letters sit on the shield's optical centre, a little right and up from where the trace had them. A soft shadow under the shield lifts it from the square, light from the upper left.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.57, 2026-10-01
+
+Dependabot opens its pull requests against master, where all work lands, instead of the default branch release. The two action updates it already merged on release, checkout 7 and setup-python 7, are folded into master.
+
 ## 0.1.56, 2026-10-01
 
 A new icon from Simon's shield drawing: two shield lines with the band between them in the green of the letters, the inside white, the letters Cg in that green, on a white square.

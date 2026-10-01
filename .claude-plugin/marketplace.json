@@ -7,7 +7,7 @@
       "name": "cguard",
       "source": "./",
       "description": "Keeps secrets, stray documents and destructive commands out of a Claude Code session. Every blocked action comes with a safe alternative.",
-      "version": "0.1.62"
+      "version": "0.1.63"
     }
   ]
 }

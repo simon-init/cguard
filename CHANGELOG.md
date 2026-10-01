@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.63, 2026-10-01
+
+The letters sit a little lower in the shield.
+
 ## 0.1.62, 2026-10-01
 
 The outer line's point comes up and its curve follows the inner line, so the rim is a little wider at the bottom than at the sides instead of a wedge. A thin bright edge just inside the outer line, lit from the upper left, gives the rim a bevel.

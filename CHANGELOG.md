@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.60, 2026-10-01
+
+The rim between the two shield lines is silver too, so the whole shield is one metal surface with the shine running across it. Lines and letters unchanged.
+
 ## 0.1.59, 2026-10-01
 
 The inside of the shield is silver: a soft gradient from light at the top left to a cooler grey at the bottom right, with one diagonal highlight for the shine. The band, the lines and the letters are unchanged.

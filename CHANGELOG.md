@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.56, 2026-10-01
+
+A new icon from Simon's shield drawing: two shield lines with the band between them in the green of the letters, the inside white, the letters Cg in that green, on a white square.
+
 ## 0.1.55, 2026-09-28
 
 The TRUNCATE pattern in the destructive-commands rule matched the CSS class truncate followed by any word, so a script that edited a styled React file asked for confirmation. It now matches TRUNCATE in capitals, as SQL is written, or the full lower-case form truncate table.

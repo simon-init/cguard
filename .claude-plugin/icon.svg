@@ -24,7 +24,7 @@
       <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <rect width="512" height="512" rx="112" fill="#EEF0F2"/>
   <g transform="translate(48 26) scale(1.8)">
     <g filter="url(#lift)">
       <path d="M114.5 19.5 L193 50 V130 C193 181 161 216 114.5 233 C68 216 36 181 36 130 V50 Z" fill="url(#silver)"/>

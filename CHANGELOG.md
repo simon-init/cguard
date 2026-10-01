@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.64, 2026-10-01
+
+The icon's square is light grey, #EEF0F2, instead of white, so it reads as a tile on a light page and does not glare on a dark one.
+
 ## 0.1.63, 2026-10-01
 
 The letters sit a little lower in the shield.

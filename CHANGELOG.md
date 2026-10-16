@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.66, 2026-10-16
+
+The install and setup steps say what to expect after each command: which ones print nothing when they work, how `cguard --help` confirms the command line is on PATH, that the PATH line only applies to new terminals or after `source`, that it should be added once, and that `cguard setup` needs a terminal window. The Python requirement notes that 3.10 and newer count as later than 3.9.
+
 ## 0.1.65, 2026-10-16
 
 The install steps make `~/.local/bin` before linking the command line into it, since macOS and many Linux setups do not have that folder, and say how to put it on PATH when `cguard` is not found. The link uses `ln -sf`, so running the step again does not fail.

@@ -90,6 +90,9 @@ claude plugin marketplace add simon-init/cguard
 claude plugin install cguard@cguard
 ```
 
+Each command prints a confirmation. The hook takes effect in Claude Code sessions started
+after the install, so restart any session that is already open.
+
 Then put the command line on your path, once. On Linux and macOS:
 
 ```
@@ -97,13 +100,25 @@ mkdir -p ~/.local/bin
 ln -sf ~/.claude/plugins/marketplaces/cguard/bin/cguard ~/.local/bin/cguard
 ```
 
-`~/.local/bin` is not there on every machine, so `mkdir -p` makes it, and leaves it as it is
-when it already exists. If `cguard` is then not found, that folder is not on your PATH. Add
-it, and open a new terminal:
+Both commands print nothing when they work. `~/.local/bin` is not there on every machine,
+so `mkdir -p` makes it, and leaves it as it is when it already exists. Check the result:
+
+```
+cguard --help
+```
+
+It should print a list of commands that starts with `cguard: guards for a Claude Code
+session`. If it says `command not found: cguard` instead, `~/.local/bin` is not on your
+PATH yet. Add it, once:
 
 ```
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc    # bash: ~/.bashrc
 ```
+
+This also prints nothing, and it does not change the terminal you are in: it adds a line
+to the file your shell reads when it starts. Open a new terminal, or run
+`source ~/.zshrc` (bash: `source ~/.bashrc`), and `cguard --help` works. Run the `echo`
+line only once, since every run adds the line again.
 
 On Windows, add this folder to your PATH. The launcher in it is `cguard.cmd`:
 
@@ -111,7 +126,8 @@ On Windows, add this folder to your PATH. The launcher in it is `cguard.cmd`:
 %USERPROFILE%\.claude\plugins\marketplaces\cguard\bin
 ```
 
-The hook needs Python 3.9 or later and git. Nothing else is installed. The two screens,
+The hook needs Python 3.9 or later and git. `python3 --version` shows yours; 3.10, 3.11,
+3.12, 3.13 and newer all count as later than 3.9. Nothing else is installed. The two screens,
 `cguard config` and `cguard setup`, need the curses module. Linux and macOS have it.
 Windows Python gets it with `pip install windows-curses`, and every other command works
 without it. On Windows, Claude Code runs hooks in Git Bash when Git for Windows is
@@ -126,7 +142,8 @@ Once after install, in a terminal:
 cguard setup
 ```
 
-A screen with five steps: the profile, the known secret paths, the computers you trust,
+Run it in a terminal window, not through Claude Code: inside a session it only prints
+`cguard setup is a screen and needs a terminal`. In a terminal, it opens a screen with five steps: the profile, the known secret paths, the computers you trust,
 the commands worth knowing, and a summary. Up and down move between the answers, and
 Enter picks one. Every step waits for you, and the left arrow goes back. Nothing is
 written until the last step, except the known secret paths, which are written when you

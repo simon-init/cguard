@@ -93,7 +93,16 @@ claude plugin install cguard@cguard
 Then put the command line on your path, once. On Linux and macOS:
 
 ```
-ln -s ~/.claude/plugins/marketplaces/cguard/bin/cguard ~/.local/bin/cguard
+mkdir -p ~/.local/bin
+ln -sf ~/.claude/plugins/marketplaces/cguard/bin/cguard ~/.local/bin/cguard
+```
+
+`~/.local/bin` is not there on every machine, so `mkdir -p` makes it, and leaves it as it is
+when it already exists. If `cguard` is then not found, that folder is not on your PATH. Add
+it, and open a new terminal:
+
+```
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc    # bash: ~/.bashrc
 ```
 
 On Windows, add this folder to your PATH. The launcher in it is `cguard.cmd`:

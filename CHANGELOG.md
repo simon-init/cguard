@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.65, 2026-10-16
+
+The install steps make `~/.local/bin` before linking the command line into it, since macOS and many Linux setups do not have that folder, and say how to put it on PATH when `cguard` is not found. The link uses `ln -sf`, so running the step again does not fail.
+
 ## 0.1.64, 2026-10-01
 
 The icon's square is light grey, #EEF0F2, instead of white, so it reads as a tile on a light page and does not glare on a dark one.
